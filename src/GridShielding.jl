@@ -11,6 +11,11 @@ include("Bounds.jl")
 export SupportingPoints, get_spacing_sizes
 include("SuppotingPoints.jl")
 
+export SimulationModel, possible_outcomes, get_reachable_area, get_barbaric_reachability_function, draw_barbaric_transition_3D!, draw_barbaric_transition!, set_reachable_area!
+include("BarbaricReachability.jl")
+
+export actions_to_int, int_to_actions
+include("ActionConversion.jl")
 
 
 module RW

@@ -75,11 +75,75 @@ begin
 	[colors...]
 end
 
-# ╔═╡ dea51a45-9282-4828-8a3b-efd3b7433ef7
-RW.rwmechanics
+# ╔═╡ 8564347e-489d-47a6-b0be-ba6b69445707
+rwshieldlabels = 	["{fast, slow}", "{fast}", "{}"]
+
+# ╔═╡ 2f5e4800-eb30-413a-9031-9afd00bc11cc
+rwshieldcolors = 	[colorant"#ff9178", colorant"#a1eaff", colorant"#ffffff"]
+
+# ╔═╡ a6eb5d3b-9b3f-47d2-9746-6cf851b19451
+md"""
+## Example Function and safety constraint
+
+This notebook uses the Random Walk example, which is included in the RW module.
+"""
+
+# ╔═╡ f31c562f-d438-4f57-a0b2-99bf5eae563b
+any_action, no_action = 
+	actions_to_int(instances(Pace)), actions_to_int([])
+
+# ╔═╡ f05e0180-27ca-4f7c-b9a9-ff20052539ca
+evaluate(rwmechanics, (_, _) -> RW.slow)
+
+# ╔═╡ 350ddf9d-5963-4779-9c6d-a8b03cd2b48c
+begin
+	plot(aspectratio=:equal, size=(300, 300), xlabel="x", ylabel="t")
+	xlims!(rwmechanics.x_min, rwmechanics.x_max + 0.1)
+	ylims!(rwmechanics.t_min, rwmechanics.t_max + 0.1)
+	draw_walk!(take_walk(rwmechanics, (_, _) -> rand([RW.slow, RW.fast]))...)
+end
+
+# ╔═╡ 099c6d2a-d125-4f67-9e30-5d204a634b38
+md"""
+The function for taking a single step needs to be wrapped up, so that it only takes the arguments `point` and `action`.
+
+The kwarg `unlucky=true` will tell the function to pick the worst-case outcome, i.e. the one where the ball preserves the least amount of power on impact. 
+
+!!! info "TODO"
+	Model random outcomes as an additional dimension, removing the need for assumptions about a "worst-case" outcome.
+"""
+
+# ╔═╡ b1fef68b-2ad0-4431-9b0e-a6f7566fef21
+simulation_function(point, action) = RW.simulate(
+	rwmechanics, 
+	point[1], 
+	point[2], 
+	action,
+	unlucky=true)
+
+# ╔═╡ 096ec85c-5b7c-4c76-b813-33fef355b9bf
+md"""
+The goal of the game is to reach `x >= x_max` without reaching `t >= t_max`. 
+
+This corresponds to the below safety property. It is defined both for a single `(x, t)` point, as well as for a set of points given by `Bounds`.
+"""
+
+# ╔═╡ a38aedbd-9ee2-4840-9ace-ee0298bd83e1
+begin
+	is_safe(point) = point[2] <= rwmechanics.t_max
+	is_safe(bounds::Bounds) = is_safe((bounds.lower[1], bounds.upper[2]))
+end
+
+# ╔═╡ fe4f171c-a582-475b-9719-a77e7369c4bd
+md"""
+## The Grid
+"""
 
 # ╔═╡ 9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
-@bind granularity NumberField(0.001:0.001:1, default=0.2)
+@bind granularity NumberField(0.001:0.001:1, default=0.1)
+
+# ╔═╡ f88cd709-a35f-4365-9624-91244a0c113a
+@bind show_grid CheckBox(default=true)
 
 # ╔═╡ bf131a2d-b087-4f19-9990-6a6fee723b6d
 @bind samples_per_axis NumberField(1:30, default=3)
@@ -88,16 +152,19 @@ RW.rwmechanics
 @bind action Select(Pace |> instances |> collect, default=RW.fast)
 
 # ╔═╡ 0a25f7fe-db47-4d20-856f-6417474b1c2a
-grid = Grid(granularity, [rwmechanics.x_min, rwmechanics.t_min], 
-	[rwmechanics.x_max + 0.3, 
-	 rwmechanics.t_max + 0.3])
+begin
+	grid = Grid(granularity, [rwmechanics.x_min, rwmechanics.t_min], 
+		[rwmechanics.x_max + 0.2, 
+		 rwmechanics.t_max + 0.2])
 
-# ╔═╡ 1cc3c41b-4d47-4951-a2d5-d7441a200092
-simulation_function(point, action) = 
-	RW.simulate(rwmechanics, point..., action, unlucky=true)
+	initialize!(grid, is_safe)
+end
 
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
 model = SimulationModel(simulation_function, samples_per_axis)
+
+# ╔═╡ f93e9e9b-7622-406b-b7d4-482365833fbd
+partition = box(grid, 0.1,0.1)
 
 # ╔═╡ 63b1f19e-1e27-49c5-a742-5f7e67de84e3
 function scatter_supporting_points!(model::SimulationModel, partition)
@@ -113,18 +180,21 @@ function scatter_supporting_points!(model::SimulationModel, partition)
 		label="Possible outcomes")
 end
 
-# ╔═╡ f93e9e9b-7622-406b-b7d4-482365833fbd
-partition = box(grid, 0.1,0.1)
+# ╔═╡ 2d02e8df-a044-4dd2-bef0-07c80e68293b
+SupportingPoints(model.samples_per_axis, partition) |> collect
 
 # ╔═╡ ae886eaa-b8e1-471d-9804-2e724352ad4e
 begin
-	draw(grid, [:,:], show_grid=true)
+	set_value!(partition, 1)
+	draw(grid, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
 
-	scatter_supporting_points!(model, partition)
+	draw_barbaric_transition!(model, partition, RW.fast, [:,:])
+
+	plot!(axisratio=:equal, lim=(grid.lower_bounds[1], grid.upper_bounds[1]), legend=:outerright)
 end
 
-# ╔═╡ 2d02e8df-a044-4dd2-bef0-07c80e68293b
-SupportingPoints(model.samples_per_axis, partition) |> collect
+# ╔═╡ 367e7be8-41fd-4e43-ac16-b28e9f707929
+
 
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
@@ -132,14 +202,25 @@ SupportingPoints(model.samples_per_axis, partition) |> collect
 # ╠═5ae3173f-6abb-4f38-94f8-90300c93d0e9
 # ╠═515c5c0b-a734-406c-b89d-6c921001a777
 # ╟─816cbb33-8a9a-4fb4-a701-339c4b9e4bcb
-# ╠═dea51a45-9282-4828-8a3b-efd3b7433ef7
+# ╠═8564347e-489d-47a6-b0be-ba6b69445707
+# ╠═2f5e4800-eb30-413a-9031-9afd00bc11cc
+# ╟─a6eb5d3b-9b3f-47d2-9746-6cf851b19451
+# ╠═f31c562f-d438-4f57-a0b2-99bf5eae563b
+# ╠═f05e0180-27ca-4f7c-b9a9-ff20052539ca
+# ╠═350ddf9d-5963-4779-9c6d-a8b03cd2b48c
+# ╟─099c6d2a-d125-4f67-9e30-5d204a634b38
+# ╠═b1fef68b-2ad0-4431-9b0e-a6f7566fef21
+# ╟─096ec85c-5b7c-4c76-b813-33fef355b9bf
+# ╠═a38aedbd-9ee2-4840-9ace-ee0298bd83e1
+# ╠═fe4f171c-a582-475b-9719-a77e7369c4bd
 # ╠═9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
+# ╠═f88cd709-a35f-4365-9624-91244a0c113a
 # ╠═bf131a2d-b087-4f19-9990-6a6fee723b6d
 # ╠═fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╠═0a25f7fe-db47-4d20-856f-6417474b1c2a
-# ╠═1cc3c41b-4d47-4951-a2d5-d7441a200092
 # ╠═dc971f77-a2bd-47bd-a9df-0786041e77b0
 # ╠═f93e9e9b-7622-406b-b7d4-482365833fbd
 # ╟─63b1f19e-1e27-49c5-a742-5f7e67de84e3
 # ╠═2d02e8df-a044-4dd2-bef0-07c80e68293b
 # ╠═ae886eaa-b8e1-471d-9804-2e724352ad4e
+# ╠═367e7be8-41fd-4e43-ac16-b28e9f707929
