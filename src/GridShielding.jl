@@ -5,6 +5,9 @@ using Plots
 export Bounds,  get_dim, bounded, magnitude
 include("Bounds.jl")
 
+export SupportingPoints, get_spacing_sizes
+include("SuppotingPoints.jl")
+
 export Grid, Partition, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover, robust_grid_serialization, stringdump, get_c_library_header
 include("Grids.jl")
 

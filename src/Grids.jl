@@ -79,6 +79,10 @@ function box(grid::Grid, state)
 	Partition(grid, indices)
 end
 
+function box(grid::Grid, state...)
+	box(grid, (state))
+end
+
 Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
 	for dim in 1:grid.dimensions
 		if !(grid.lower_bounds[dim] <= state[dim] < grid.upper_bounds[dim])
@@ -98,49 +102,6 @@ function bounds(partition::Partition)
 		for (dim, i) in enumerate(partition.indices)]
 	lower = [b - granularity for b in upper]
 	lower, upper
-end
-
-# Iterable object which returns regularly-spaced points within a partition.
-struct grid_points
-    partition::Partition
-    per_axis::Number
-end
-
-Base.length(s::grid_points) = s.per_axis^s.partition.grid.dimensions
-
-Base.iterate(s::grid_points) = begin
-    if s.per_axis - 1 < 0
-        throw(ArgumentError("Samples per axis must be at least 1."))
-    end
-
-    lower, upper = bounds(s.partition)
-    spacing = s.partition.grid.granularity/(s.per_axis - 1)
-    # The iterator state  is (spacing, lower, upper, indices).
-    # First sample always in the lower-left corner. 
-    return lower, (spacing, lower, upper, zeros(Int, s.partition.grid.dimensions))
-end
-
-Base.iterate(s::grid_points, state) = begin
-    grid = s.partition.grid
-    spacing, lower, upper, indices = state
-    indices = copy(indices)
-
-    for dim in 1:grid.dimensions
-        indices[dim] += 1
-        if indices[dim] <= s.per_axis - 1
-            break
-        else
-            if dim < grid.dimensions
-                indices[dim] = 0
-                # Proceed to incrementing next row
-            else
-                return nothing
-            end
-        end
-    end
-
-    sample = [i*spacing + lower[dim] for (dim, i) in enumerate(indices)]
-    sample, (spacing, lower, upper, indices)
 end
 
 Base.in(s::Union{Vector, Tuple}, partition::Partition) = begin
