@@ -114,12 +114,12 @@ The kwarg `unlucky=true` will tell the function to pick the worst-case outcome, 
 """
 
 # ╔═╡ b1fef68b-2ad0-4431-9b0e-a6f7566fef21
-simulation_function(point, action) = RW.simulate(
+simulation_function(point, action, random_outcomes) = RW.simulate(
 	rwmechanics, 
 	point[1], 
 	point[2], 
 	action,
-	unlucky=true)
+	random_outcomes)
 
 # ╔═╡ 096ec85c-5b7c-4c76-b813-33fef355b9bf
 md"""
@@ -160,14 +160,20 @@ begin
 	initialize!(grid, is_safe)
 end
 
+# ╔═╡ 1685ea67-dcb2-4484-a58b-24c68b9ff2f2
+ϵ = rwmechanics.ϵ
+
+# ╔═╡ 63866178-5ad2-48b8-88d2-9eaadd73fabf
+randomness_space = Bounds((-ϵ,  -ϵ), (ϵ, ϵ))
+
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
-model = SimulationModel(simulation_function, samples_per_axis)
+model = SimulationModel(simulation_function, randomness_space, samples_per_axis)
 
 # ╔═╡ e565e49f-26e8-492b-8ec4-06587cffd46b
-@bind x NumberField(0.01:0.01:1)
+@bind x Slider(0.01:0.01:1)
 
 # ╔═╡ 0b0e711e-61da-4cbf-974f-950e4222d2d2
-@bind t NumberField(0.01:0.01:1)
+@bind t Slider(0.01:0.01:1)
 
 # ╔═╡ f93e9e9b-7622-406b-b7d4-482365833fbd
 partition = box(grid, x, t)
@@ -203,6 +209,7 @@ begin
 
 	# plot settings
 	plot!(axisratio=:equal, 
+		size=(800, 600),
 		lim=(grid.bounds.lower[1], grid.bounds.upper[1]), 
 		legend=:outerright)
 end
@@ -226,6 +233,9 @@ begin
 		legend=:outerright)
 end
 
+# ╔═╡ 26119c6f-c2c0-42b9-93c0-3e9ec1d857d9
+SupportingPoints(1, Bounds([], [])) |> collect
+
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 # ╠═bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -248,6 +258,8 @@ end
 # ╠═bf131a2d-b087-4f19-9990-6a6fee723b6d
 # ╠═fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╠═0a25f7fe-db47-4d20-856f-6417474b1c2a
+# ╠═1685ea67-dcb2-4484-a58b-24c68b9ff2f2
+# ╠═63866178-5ad2-48b8-88d2-9eaadd73fabf
 # ╠═dc971f77-a2bd-47bd-a9df-0786041e77b0
 # ╠═e565e49f-26e8-492b-8ec4-06587cffd46b
 # ╠═0b0e711e-61da-4cbf-974f-950e4222d2d2
@@ -259,3 +271,4 @@ end
 # ╠═ca166647-c150-43dc-8271-f3ac47ccb051
 # ╠═d112a057-f541-43cf-89cf-68f74887cdfa
 # ╠═0ee2563c-e191-47db-a01f-b9308f814d78
+# ╠═26119c6f-c2c0-42b9-93c0-3e9ec1d857d9

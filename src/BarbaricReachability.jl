@@ -1,5 +1,6 @@
 struct SimulationModel
 	simulation_function::Function
+	randomness_space::Bounds
 	samples_per_axis::Number
 end
 
@@ -9,8 +10,10 @@ function possible_outcomes(model::SimulationModel, partition::Partition, action)
 	
 	result = []
 	for point in SupportingPoints(model.samples_per_axis, partition)
-		point′ = model.simulation_function(point, action)
-		push!(result, point′)
+		for random_outcomes in SupportingPoints(model.samples_per_axis, model.randomness_space)
+			point′ = model.simulation_function(point, action, random_outcomes)
+			push!(result, point′)
+		end
 	end
 	result
 end

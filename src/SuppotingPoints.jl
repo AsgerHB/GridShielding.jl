@@ -2,6 +2,10 @@ struct SupportingPoints
     per_axis::Number
     bounds::Bounds
 
+    function SupportingPoints(per_axis::Number, bounds::Bounds)
+        new(per_axis, bounds)
+    end
+
     function SupportingPoints(per_axis::Number, partition::Partition)
         new(per_axis, Bounds(partition))
     end
