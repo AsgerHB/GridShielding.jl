@@ -17,6 +17,9 @@ include("BarbaricReachability.jl")
 export actions_to_int, int_to_actions
 include("ActionConversion.jl")
 
+export get_transitions, make_shield, shield_step, make_shield, draw_shield, shielding_function, get_shielding_function
+include("ShieldSynthesis.jl")
+
 
 module RW
 using Plots

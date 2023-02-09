@@ -163,8 +163,14 @@ end
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
 model = SimulationModel(simulation_function, samples_per_axis)
 
+# ╔═╡ e565e49f-26e8-492b-8ec4-06587cffd46b
+@bind x NumberField(0.01:0.01:1)
+
+# ╔═╡ 0b0e711e-61da-4cbf-974f-950e4222d2d2
+@bind t NumberField(0.01:0.01:1)
+
 # ╔═╡ f93e9e9b-7622-406b-b7d4-482365833fbd
-partition = box(grid, 0.1,0.1)
+partition = box(grid, x, t)
 
 # ╔═╡ 63b1f19e-1e27-49c5-a742-5f7e67de84e3
 function scatter_supporting_points!(model::SimulationModel, partition)
@@ -189,13 +195,36 @@ begin
 
 	draw_barbaric_transition!(model, partition, RW.fast, [:,:])
 
+	# cursor
+	scatter!([x], [t],
+		marker=(5, :rtriangle, :white),
+		markerstroke=1,
+		label=nothing)
+
+	# plot settings
 	plot!(axisratio=:equal, 
 		lim=(grid.bounds.lower[1], grid.bounds.upper[1]), 
 		legend=:outerright)
 end
 
-# ╔═╡ 367e7be8-41fd-4e43-ac16-b28e9f707929
+# ╔═╡ b0138efc-3a7d-46a5-9095-528ba9d7663f
+reachability_function = get_barbaric_reachability_function(model)
 
+# ╔═╡ ca166647-c150-43dc-8271-f3ac47ccb051
+@bind max_steps NumberField(1:1000)
+
+# ╔═╡ d112a057-f541-43cf-89cf-68f74887cdfa
+shield, max_steps_reached = 
+	make_shield(reachability_function, Pace, grid; max_steps)
+
+# ╔═╡ 0ee2563c-e191-47db-a01f-b9308f814d78
+begin
+	draw(shield, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
+	
+	plot!(axisratio=:equal, 
+		lim=(grid.bounds.lower[1], grid.bounds.upper[1]), 
+		legend=:outerright)
+end
 
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
@@ -213,15 +242,20 @@ end
 # ╠═b1fef68b-2ad0-4431-9b0e-a6f7566fef21
 # ╟─096ec85c-5b7c-4c76-b813-33fef355b9bf
 # ╠═a38aedbd-9ee2-4840-9ace-ee0298bd83e1
-# ╠═fe4f171c-a582-475b-9719-a77e7369c4bd
+# ╟─fe4f171c-a582-475b-9719-a77e7369c4bd
 # ╠═9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
 # ╠═f88cd709-a35f-4365-9624-91244a0c113a
 # ╠═bf131a2d-b087-4f19-9990-6a6fee723b6d
 # ╠═fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╠═0a25f7fe-db47-4d20-856f-6417474b1c2a
 # ╠═dc971f77-a2bd-47bd-a9df-0786041e77b0
+# ╠═e565e49f-26e8-492b-8ec4-06587cffd46b
+# ╠═0b0e711e-61da-4cbf-974f-950e4222d2d2
 # ╠═f93e9e9b-7622-406b-b7d4-482365833fbd
 # ╟─63b1f19e-1e27-49c5-a742-5f7e67de84e3
 # ╠═2d02e8df-a044-4dd2-bef0-07c80e68293b
 # ╠═ae886eaa-b8e1-471d-9804-2e724352ad4e
-# ╠═367e7be8-41fd-4e43-ac16-b28e9f707929
+# ╠═b0138efc-3a7d-46a5-9095-528ba9d7663f
+# ╠═ca166647-c150-43dc-8271-f3ac47ccb051
+# ╠═d112a057-f541-43cf-89cf-68f74887cdfa
+# ╠═0ee2563c-e191-47db-a01f-b9308f814d78

@@ -32,7 +32,7 @@ rwmechanics = RWMechanics()
 
 function simulate(m::RWMechanics, x, t, a; unlucky=false)
     if x > m.x_max # game has ended.
-        return x, t
+        return x, 0
     end
 
 	x′, t′ =  x, t

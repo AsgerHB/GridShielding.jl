@@ -1,67 +1,44 @@
-function get_transitions(R, actions, grid)
+function get_transitions(reachability_function, actions, grid)
 	result = Dict()
 	
-	for action in instances(actions)
+	for action in actions
 		result[action] = Array{Vector{Any}}(undef, size(grid))
 	end
 	
-	for square in grid
-		for action in instances(actions)
-			result[action][square.indices...] = R(square, action)
+	for partition in grid
+		for action in actions
+			result[action][partition.indices...] = reachability_function(partition, action)
 		end
 	end
 	result
 end
 
-function make_shield(R::Function, actions, grid::Grid; max_steps=typemax(Int))
-	R_computed = get_transitions(R, actions, grid)
+function get_transitions(reachability_function, actions::Type, grid)
+	get_transitions(reachability_function, instances(actions), grid)
+end
+
+function make_shield(reachability_function::Function, actions, grid::Grid; max_steps=typemax(Int))
+	R_computed = get_transitions(reachability_function, actions, grid)
 	make_shield(R_computed, actions, grid; max_steps)
 end
 
-prebaked_translation_dict = Dict()
+function get_new_value(R_computed::Dict{Any}, actions, partition::Partition)
+	bad = actions_to_int([]) # No actions allowed in this partition; do not go here.
+	value = get_value(partition)
 
-function get_translation_dict(actions::Type)
-	if haskey(prebaked_translation_dict, actions)
-		return prebaked_translation_dict[actions]
-	else
-		prebaked_translation_dict[actions] = Dict(a => 2^(i-1) for (i, a) in enumerate(instances(actions)))
-		return get_translation_dict(actions)
-	end
-end
-
-# Returns an integer representing the given set of actions
-function actions_to_int(actions::Type, list)
-	translation_dict = get_translation_dict(actions)
-	
-	result = 0
-
-	if actions == [] 
-		return result
-	end
-	
-	for action in list
-		result += translation_dict[action]
-	end
-	result
-end
-
-function get_new_value(R_computed::Dict{Any}, actions, square::Square)
-	bad = actions_to_int(actions, []) # No actions allowed in this square; do not go here.
-	value = get_value(square)
-
-	if value == bad # Bad squares stay bad. 
+	if value == bad # Bad partitions stay bad. 
 		return bad
 	end
 	
  	result = []
 
-	for action in instances(actions)
-		reachable = R_computed[action][square.indices...]
-		reachable = [Square(square.grid, i) for i in reachable]
+	for action in actions
+		reachable = R_computed[action][partition.indices...]
+		reachable = [Partition(partition.grid, i) for i in reachable]
 		
 		action_allowed = true
-		for square′ in reachable
-			if get_value(square′) == bad
+		for partition′ in reachable
+			if get_value(partition′) == bad
 				action_allowed = false
 				break
 			end
@@ -72,15 +49,19 @@ function get_new_value(R_computed::Dict{Any}, actions, square::Square)
 		end
 	end
 
-	actions_to_int(actions, result)
+	actions_to_int(result)
+end
+
+function get_new_value(R_computed::Dict{Any}, actions::Type, partition::Partition)
+	get_new_value(R_computed, instances(actions), partition)
 end
 
 #Take a single step in the fixed point compuation.
 function shield_step(R_computed::Dict{Any}, actions, grid::Grid)
 	grid′ = Grid(grid.granularity, grid.bounds.lower, grid.bounds.upper)
 
-	for square in grid
-		grid′.array[square.indices...] = get_new_value(R_computed, actions, square)
+	for partition in grid
+		grid′.array[partition.indices...] = get_new_value(R_computed, actions, partition)
 	end
 	grid′
 end
@@ -99,34 +80,22 @@ function make_shield(R_computed::Dict{Any}, actions, grid::Grid; max_steps=typem
 	(result=grid′, max_steps_reached=i==0)
 end
 
-#Returns an integer representing the given set of actions
-function int_to_actions(actions::Type, int::Number)
-	translation_dict = get_translation_dict(actions)
-	
-	result = []
-	for (k, v) in translation_dict
-		 if int & v != 0
-			 push!(result, k)
-		 end
-	end
-	result
-end
 
 function draw_shield(shield::Grid, actions; v_ego=0, plotargs...)
 	
-	square = box(shield, [v_ego, 0, 0])
-	index = square.indices[1]
+	partition = box(shield, [v_ego, 0, 0])
+	index = partition.indices[1]
 	slice = [index, :, :]
 
-	# Count number of allowed actions in each square
+	# Count number of allowed actions in each partition
 	shield′ = Grid(shield.granularity, shield.bounds.lower, shield.bounds.upper)
-	for square in shield
-		square′ = Square(shield′, square.indices)
+	for partition in shield
+		partition′ = Partition(shield′, partition.indices)
 		
-		allowed_actions = get_value(square)
+		allowed_actions = get_value(partition)
 		allowed_actions = int_to_actions(actions, allowed_actions)
 		
-		set_value!(square′, length(allowed_actions))
+		set_value!(partition′, length(allowed_actions))
 	end
 	
 	draw(shield′, slice, 
@@ -147,8 +116,8 @@ function shielding_function(shield::Grid, actions, fallback_policy::Function,
 		return action
 	end
 	
-	square = box(shield, s)
-	allowed = int_to_actions(actions, get_value(square))
+	partition = box(shield, s)
+	allowed = int_to_actions(actions, get_value(partition))
 
 	if action ∈ allowed
 		return action
