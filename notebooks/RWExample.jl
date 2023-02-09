@@ -185,12 +185,13 @@ SupportingPoints(model.samples_per_axis, partition) |> collect
 
 # ╔═╡ ae886eaa-b8e1-471d-9804-2e724352ad4e
 begin
-	set_value!(partition, 1)
 	draw(grid, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
 
 	draw_barbaric_transition!(model, partition, RW.fast, [:,:])
 
-	plot!(axisratio=:equal, lim=(grid.lower_bounds[1], grid.upper_bounds[1]), legend=:outerright)
+	plot!(axisratio=:equal, 
+		lim=(grid.bounds.lower[1], grid.bounds.upper[1]), 
+		legend=:outerright)
 end
 
 # ╔═╡ 367e7be8-41fd-4e43-ac16-b28e9f707929

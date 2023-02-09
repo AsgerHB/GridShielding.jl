@@ -8,17 +8,6 @@ struct Bounds
         end
         return new(lower, upper)
     end
-
-    function Bounds(partition::Partition)
-        grid = partition.grid
-        granularity, lower_bounds = grid.granularity, grid.lower_bounds
-
-        upper = [i*granularity + lower_bounds[dim] 
-            for (dim, i) in enumerate(partition.indices)]
-
-        lower = [b - granularity for b in upper]
-        Bounds(lower, upper)
-    end
 end
 
 function Bounds(lower::Dict, upper::Dict, dimensionality)

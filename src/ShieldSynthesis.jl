@@ -77,7 +77,7 @@ end
 
 #Take a single step in the fixed point compuation.
 function shield_step(R_computed::Dict{Any}, actions, grid::Grid)
-	grid′ = Grid(grid.granularity, grid.lower_bounds, grid.upper_bounds)
+	grid′ = Grid(grid.granularity, grid.bounds.lower, grid.bounds.upper)
 
 	for square in grid
 		grid′.array[square.indices...] = get_new_value(R_computed, actions, square)
@@ -119,7 +119,7 @@ function draw_shield(shield::Grid, actions; v_ego=0, plotargs...)
 	slice = [index, :, :]
 
 	# Count number of allowed actions in each square
-	shield′ = Grid(shield.granularity, shield.lower_bounds, shield.upper_bounds)
+	shield′ = Grid(shield.granularity, shield.bounds.lower, shield.bounds.upper)
 	for square in shield
 		square′ = Square(shield′, square.indices)
 		
