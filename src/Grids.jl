@@ -118,8 +118,8 @@ function set_value!(partition::Partition, value)
 	partition.grid.array[partition.indices...] = value
 end
 
-function set_values!(squares::Vector{Partition}, value)
-	for partition in squares
+function set_values!(partitions::Vector{Partition}, value)
+	for partition in partitions
 		set_value!(partition, value)
 	end
 end
@@ -212,7 +212,7 @@ function cover(grid::Grid, lower, upper)
 	ip_lower = floor((p_lower - grid.p_min)/grid.granularity) + 1
 	ip_upper = floor((p_upper - grid.p_min)/grid.granularity) + 1
 	
-	# Discard squares outside the grid dimensions
+	# Discard partitions outside the grid dimensions
 	iv_lower = max(iv_lower, 1)
 	iv_upper = min(iv_upper, grid.v_count)
 	
