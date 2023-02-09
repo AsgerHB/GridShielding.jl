@@ -1,0 +1,13 @@
+name = "GridShielding"
+uuid = "d6812381-bd27-4ab8-a35f-a1c7ba1f8c22"
+authors = ["Asger Horn Brorholt"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
