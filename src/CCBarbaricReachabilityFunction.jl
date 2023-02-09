@@ -74,13 +74,13 @@ Base.iterate(iter::possible_front_actions, iterstate::CCAction) = begin
 end
     
 
-# Returns a list of states that are possible outcomes from the initial square
+# Returns a list of states that are possible outcomes from the initial partition
 # sampled as regularly spaced grid-points defined from samples_per_axis
 function possible_outcomes(samples_per_axis, mechanics::CCMechanics, 
-			square::Square, action::CCAction)
+			partition::Partition, action::CCAction)
 	
 	result = []
-	for s in grid_points(square, samples_per_axis)
+	for s in grid_points(partition, samples_per_axis)
 		for front_action in possible_front_actions(samples_per_axis, mechanics, s)
 			s′ = simulate_point(mechanics, front_action, s, action)
 			s′ = (s′[1], s′[2], max(-1., s′[3]))
@@ -94,15 +94,15 @@ end
 
 I could have used proper squares for this, but I want to save that extra bit of memory by not having lots of references back to the same  grid.
 """
-function get_reachable_area(samples_per_axis, mechanics, square::Square, action)
+function get_reachable_area(samples_per_axis, mechanics, partition::Partition, action)
 	result = Set()
-	for s in possible_outcomes(samples_per_axis, mechanics,  square, action)	
-		if !(s ∈ square.grid)
+	for s in possible_outcomes(samples_per_axis, mechanics,  partition, action)	
+		if !(s ∈ partition.grid)
 			continue
 		end
 		
-		square′ = box(square.grid, s)
-		indices = square′.indices
+		partition′ = box(partition.grid, s)
+		indices = partition′.indices
 		if !(indices ∈ result)
 			push!(result, indices)
 		end
@@ -113,32 +113,32 @@ end
 """
 	get_barbaric_reachability_function(samples_per_axis, mechanics)
 
-Returns a function `R` of the signature `(square, action) -> squares::Vector{Tuple{Int}}` that computes the set of reachable squares from the initial given square and action. The function returns tuples representing squares instead of members of the Square type for performance reasons.
+Returns a function `R` of the signature `(partition, action) -> squares::Vector{Tuple{Int}}` that computes the set of reachable squares from the initial given partition and action. The function returns tuples representing squares instead of members of the Partition type for performance reasons.
 
 `samples_per_axis` specifies the number of samples that are taken along the v and p axes. The total number of samples taken will be `samples_per_axis^2`. 
 """
 function get_barbaric_reachability_function(samples_per_axis, mechanics)
-	return (square, action) ->
-		get_reachable_area(samples_per_axis, mechanics, square, action)
+	return (partition, action) ->
+		get_reachable_area(samples_per_axis, mechanics, partition, action)
 end
 
 function draw_barbaric_transition_3D!(samples_per_axis, mechanics::CCMechanics, 
-		square::Square, action::CCAction;
+		partition::Partition, action::CCAction;
 		colors=(:black, :gray),
 		plotargs...)
 	
-	samples = [s for s in grid_points(square, samples_per_axis)]
+	samples = [s for s in grid_points(partition, samples_per_axis)]
 	scatter!([s[1] for s in samples], [s[2] for s in samples], [s[3] for s in samples],
 			markersize=2,
 			markerstrokewidth=0,
-			label="initial square",
+			label="initial partition",
 			xlabel="v_ego",
 			ylabel="v_front",
 			color=colors[1],
 			zlabel="distance";
 			plotargs...)
 	
-	reach = possible_outcomes(samples_per_axis, mechanics, square, action)
+	reach = possible_outcomes(samples_per_axis, mechanics, partition, action)
 	scatter!([r[1] for r in reach], [r[2] for r in reach], [r[3] for r in reach],
 			markersize=2,
 			markerstrokewidth=0,
@@ -147,21 +147,21 @@ function draw_barbaric_transition_3D!(samples_per_axis, mechanics::CCMechanics,
 end
 
 function draw_barbaric_transition!(samples_per_axis, mechanics::CCMechanics, 
-		square::Square, action::CCAction, slice;
+		partition::Partition, action::CCAction, slice;
 		colors=(:black, :gray),
 		plotargs...)
 
 	ix, iy = indexof((==(Colon())), slice)
 	
-	samples = [s for s in grid_points(square, samples_per_axis)]
+	samples = [s for s in grid_points(partition, samples_per_axis)]
 	scatter!([s[ix] for s in samples], [s[iy] for s in samples],
 			markersize=2,
 			markerstrokewidth=0,
-			label="initial square",
+			label="initial partition",
 			color=colors[1];
 			plotargs...)
 	
-	reach = possible_outcomes(samples_per_axis, mechanics, square, action)
+	reach = possible_outcomes(samples_per_axis, mechanics, partition, action)
 	scatter!([r[ix] for r in reach], [r[iy] for r in reach],
 			markersize=2,
 			markerstrokewidth=0,
@@ -169,13 +169,13 @@ function draw_barbaric_transition!(samples_per_axis, mechanics::CCMechanics,
 			label="possible outcomes of $action")
 end
 
-"""Update the value of every square reachable from the given `square`.
+"""Update the value of every partition reachable from the given `partition`.
 """
-function set_reachable_area!(samples_per_axis, mechanics, square::Square, action, value)
+function set_reachable_area!(samples_per_axis, mechanics, partition::Partition, action, value)
 	
-	reachable_area = get_reachable_area(samples_per_axis, mechanics, square::Square, action)
+	reachable_area = get_reachable_area(samples_per_axis, mechanics, partition::Partition, action)
 	for indices in reachable_area
-		square.grid.array[indices...] = value
+		partition.grid.array[indices...] = value
 	end
 end
 

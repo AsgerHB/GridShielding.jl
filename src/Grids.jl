@@ -28,22 +28,22 @@ end
 Base.show(io::IO, grid::Grid) = println(io, 
 "Grid($(grid.G), $(grid.lower_bounds), $(grid.upper_bounds))")
 
-# Makes the grid iterable, returning each square in turn.
+# Makes the grid iterable, returning each partition in turn.
 Base.length(grid::Grid) = length(grid.array)
 
 Base.size(grid::Grid) = size(grid.array)
 
-struct Square
+struct Partition
     grid::Grid
     indices::Vector{Int}
 end
 
 # Begin iteration.
-# State is the indices of the previous square
+# State is the indices of the previous partition
 Base.iterate(grid::Grid) = begin
     indices = ones(Int, grid.dimensions)
-    square = Square(grid, indices)
-    square, indices
+    partition = Partition(grid, indices)
+    partition, indices
 end
 
 Base.iterate(grid::Grid, state) = begin
@@ -62,7 +62,7 @@ Base.iterate(grid::Grid, state) = begin
             end
         end
     end
-    Square(grid, indices), indices
+    Partition(grid, indices), indices
 end
 
 function box(grid::Grid, state)
@@ -76,7 +76,7 @@ function box(grid::Grid, state)
 		indices[dim] = floor(Int, (state[dim] - grid.lower_bounds[dim])/grid.G) + 1
 	end
 	
-	Square(grid, indices)
+	Partition(grid, indices)
 end
 
 Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
@@ -89,39 +89,39 @@ Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
 	return true
 end
 
-Base.in(square::Square, grid::Grid) = square.grid == grid
+Base.in(partition::Partition, grid::Grid) = partition.grid == grid
 
-function bounds(square::Square)
-	grid = square.grid
+function bounds(partition::Partition)
+	grid = partition.grid
 	G, lower_bounds = grid.G, grid.lower_bounds
 	upper = [i*G + lower_bounds[dim] 
-		for (dim, i) in enumerate(square.indices)]
+		for (dim, i) in enumerate(partition.indices)]
 	lower = [b - G for b in upper]
 	lower, upper
 end
 
-# Iterable object which returns regularly-spaced points within a square.
+# Iterable object which returns regularly-spaced points within a partition.
 struct grid_points
-    square::Square
+    partition::Partition
     per_axis::Number
 end
 
-Base.length(s::grid_points) = s.per_axis^s.square.grid.dimensions
+Base.length(s::grid_points) = s.per_axis^s.partition.grid.dimensions
 
 Base.iterate(s::grid_points) = begin
     if s.per_axis - 1 < 0
         throw(ArgumentError("Samples per axis must be at least 1."))
     end
 
-    lower, upper = bounds(s.square)
-    spacing = s.square.grid.G/(s.per_axis - 1)
+    lower, upper = bounds(s.partition)
+    spacing = s.partition.grid.G/(s.per_axis - 1)
     # The iterator state  is (spacing, lower, upper, indices).
     # First sample always in the lower-left corner. 
-    return lower, (spacing, lower, upper, zeros(Int, s.square.grid.dimensions))
+    return lower, (spacing, lower, upper, zeros(Int, s.partition.grid.dimensions))
 end
 
 Base.iterate(s::grid_points, state) = begin
-    grid = s.square.grid
+    grid = s.partition.grid
     spacing, lower, upper, indices = state
     indices = copy(indices)
 
@@ -143,8 +143,8 @@ Base.iterate(s::grid_points, state) = begin
     sample, (spacing, lower, upper, indices)
 end
 
-Base.in(s::Union{Vector, Tuple}, square::Square) = begin
-	lower, upper = bounds(square)
+Base.in(s::Union{Vector, Tuple}, partition::Partition) = begin
+	lower, upper = bounds(partition)
 	for dim in 1:length(s)
 		if !(lower[dim] <= s[dim] < upper[dim])
 			return false
@@ -153,29 +153,29 @@ Base.in(s::Union{Vector, Tuple}, square::Square) = begin
 	return true
 end
 
-function set_value!(square::Square, value)
-	square.grid.array[square.indices...] = value
+function set_value!(partition::Partition, value)
+	partition.grid.array[partition.indices...] = value
 end
 
-function set_values!(squares::Vector{Square}, value)
-	for square in squares
-		set_value!(square, value)
+function set_values!(squares::Vector{Partition}, value)
+	for partition in squares
+		set_value!(partition, value)
 	end
 end
 
-function get_value(square::Square)
-	square.grid.array[square.indices...]
+function get_value(partition::Partition)
+	partition.grid.array[partition.indices...]
 end
 
 function clear!(grid::Grid)
-	for square in grid
-		set_value!(square, 0)
+	for partition in grid
+		set_value!(partition, 0)
 	end
 end
 
 function initialize!(grid::Grid, value_function=(_) -> 1)
-	for square in grid
-		set_value!(square, value_function(bounds(square)...))
+	for partition in grid
+		set_value!(partition, value_function(bounds(partition)...))
 	end
 end
 
@@ -285,8 +285,8 @@ function robust_grid_deserialization(file)
 	end
 	
 	grid = Grid(f.G, f.lower_bounds, f.upper_bounds)
-	for square in grid
-		set_value!(square, f.array[square.indices...])
+	for partition in grid
+		set_value!(partition, f.array[partition.indices...])
 	end
 	
 	grid
