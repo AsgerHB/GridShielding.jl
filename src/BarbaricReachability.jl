@@ -73,7 +73,7 @@ function draw_barbaric_transition!(model,
 			markershape=:+,
 			markersize=5,
 			markerstrokewidth=4,
-			label="initial partition",
+			label="initial",
 			color=colors[1];
 			plotargs...)
 	
@@ -82,7 +82,7 @@ function draw_barbaric_transition!(model,
 			markersize=2,
 			markerstrokewidth=0,
 			color=colors[2],
-			label="possible outcomes of $action")
+			label="$action")
 end
 
 """Update the value of every partition reachable from the given `partition`.
