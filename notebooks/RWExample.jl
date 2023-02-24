@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.20
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
@@ -358,10 +358,13 @@ begin
 		draw_barbaric_transition!(model, partition, action, [:,:])
 	
 		# cursor
+		#=
 		scatter!([x], [t],
 			marker=(5, :rtriangle, :white),
 			markerstroke=1,
 			label=nothing)
+		=#
+		RW.draw_next_step!(rwmechanics, x, t, action)
 	end
 
 	# plot settings
@@ -475,8 +478,8 @@ RW.evaluate(rwmechanics, (_, _) -> RW.slow)
 # ╟─fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╟─9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
 # ╠═f93e9e9b-7622-406b-b7d4-482365833fbd
-# ╠═53937382-f37e-4935-bd8c-88d8c3c4240b
-# ╠═04dbeb6f-024d-4899-a9eb-0634f8f352f1
+# ╟─53937382-f37e-4935-bd8c-88d8c3c4240b
+# ╟─04dbeb6f-024d-4899-a9eb-0634f8f352f1
 # ╠═1685ea67-dcb2-4484-a58b-24c68b9ff2f2
 # ╠═63866178-5ad2-48b8-88d2-9eaadd73fabf
 # ╟─48c1b86b-983d-4a55-a0d2-652c1ce2c544

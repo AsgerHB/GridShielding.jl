@@ -88,16 +88,24 @@ function draw_next_step!(m::RWMechanics, x, t, a=:both;
 	scatter!([x], [t], 
 		markersize=3, 
 		markerstrokewidth=0,
-		color=colors.line)
+		color=colors.line,
+		label=nothing)
+
 	δ, τ = a == fast ? (m.δ_fast, m.τ_fast) : (m.δ_slow, m.τ_slow)
 	δ, τ = δ + x, τ + t
+
 	plot!(Shape([δ - m.ϵ, δ - m.ϵ, δ + m.ϵ, δ + m.ϵ], 
 				[τ - m.ϵ, τ + m.ϵ, τ + m.ϵ, τ - m.ϵ]), 
 			color=color,
 			opacity=0.8,
 			linewidth=0,
 			label=nothing)
-	plot!([x, δ], [t, τ], linestyle=linestyle, linewidth=1, linecolor=color, label=nothing)
+
+	plot!([x, δ], [t, τ], 
+		linestyle=linestyle, 
+		linewidth=1, 
+		linecolor=color, 
+		label=nothing)
 end
 
 
