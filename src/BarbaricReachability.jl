@@ -1,7 +1,7 @@
 struct SimulationModel
 	simulation_function::Function
 	randomness_space::Bounds
-	samples_per_axis::Number
+	samples_per_axis
 end
 
 # Returns a list of states that are possible outcomes from the initial partition
@@ -32,7 +32,7 @@ function get_reachable_area(model::SimulationModel, partition::Partition, action
 	[result...]
 end
 
-function get_barbaric_reachability_function(model)
+function get_barbaric_reachability_function(model::SimulationModel)
 	return (partition, action) ->
 		get_reachable_area(model, partition, action)
 end

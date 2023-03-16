@@ -1,31 +1,35 @@
 struct SupportingPoints
-    per_axis::Number
+    per_axis
     bounds::Bounds
 
-    function SupportingPoints(per_axis::Number, bounds::Bounds)
+    function SupportingPoints(per_axis, bounds::Bounds)
+        if per_axis isa Number
+            per_axis = [per_axis for _ in 1:get_dim(bounds)]
+        end
         new(per_axis, bounds)
     end
 
-    function SupportingPoints(per_axis::Number, partition::Partition)
-        new(per_axis, Bounds(partition))
+    function SupportingPoints(per_axis, partition::Partition)
+        SupportingPoints(per_axis, Bounds(partition))
     end
 end
 
 function get_spacing_sizes(s::SupportingPoints, dimensionality)
     upper, lower = s.bounds.upper, s.bounds.lower
-    spacings = [upper[i] - lower[i] for i in 1:dimensionality]
-    spacings = [spacing/(s.per_axis - 1) for spacing in spacings]
+    spacings = [upper[dim] - lower[dim] for dim in 1:dimensionality]
+    spacings = [s.per_axis[dim] == 1 ?  0 :  spacing/(s.per_axis[dim] - 1) 
+        for (dim, spacing) in enumerate(spacings)]
 end
 
 Base.length(s::SupportingPoints) = begin
     if s.bounds.upper == s.bounds.lower
         return 1
     end
-    return s.per_axis^get_dim(s.bounds)
+    return prod(s.per_axis[dim] for dim in 1:get_dim(s.bounds))
 end
 
 Base.iterate(s::SupportingPoints) = begin
-    if s.per_axis - 1 < 0
+    if any([per_axis - 1 < 0 for per_axis in s.per_axis])
         throw(ArgumentError("Samples per axis must be at least 1."))
     end
     dimensionality = get_dim(s.bounds)
@@ -58,7 +62,7 @@ Base.iterate(s::SupportingPoints, state) = begin
 
     for dim in 1:dimensionality
         indices[dim] += 1
-        if indices[dim] <= s.per_axis - 1
+        if indices[dim] <= s.per_axis[dim] - 1
             break
         else
             if dim < dimensionality
