@@ -25,7 +25,6 @@ function Grid(granularity, lower_bounds, upper_bounds)
 	if granularity isa Number
 		granularity = Tuple(granularity for _ in 1:dimensions)
 	end
-    
     array = zeros(Int8, (size...,))
     Grid(granularity, dimensions, Bounds(lower_bounds, upper_bounds), size, array)
 end
@@ -94,7 +93,6 @@ Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
 			return false
 		end
 	end
-	
 	return true
 end
 
@@ -104,10 +102,10 @@ function Bounds(partition::Partition)
 	grid = partition.grid
 	granularity, lower = grid.granularity, grid.bounds.lower
 
-	upper = [i*granularity[dim] + lower[dim] 
-		for (dim, i) in enumerate(partition.indices)]
+	upper = Tuple(i*granularity[dim] + lower[dim] 
+		for (dim, i) in enumerate(partition.indices))
 
-	lower = [u - granularity[dim] for (dim, u) in enumerate(upper)]
+	lower = Tuple(u - granularity[dim] for (dim, u) in enumerate(upper))
 	Bounds(lower, upper)
 end
 
@@ -158,7 +156,7 @@ function indexof(clause, list)
 	result
 end
 
-function draw(grid::Grid, slice;
+function draw(grid::Grid, slice=[:,:];
 				colors=[:white, :black], 
 				color_labels=[],
 				show_grid=false, 
