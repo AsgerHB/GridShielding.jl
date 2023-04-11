@@ -36,7 +36,7 @@ end
 
 # ╔═╡ e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 md"""
-# Random Walk Example
+# Bouncing Ball Example
 
 ## Preface
 """
@@ -159,7 +159,7 @@ The initialized grid is shown in the following figure.
 
 Choosing a very low granularity might make the figure hard to see, and cause slowness. There is also a bug where chosing an uneven granularity will cause the grid to be misaligned. So it can be turned off below.
 
-`show_grid:` $(@bind show_grid CheckBox(default=true))
+`show_grid:` $(@bind show_grid CheckBox(default=false))
 """
 
 # ╔═╡ fbf86b61-57a2-4250-8c1b-fac7110a6429
@@ -215,7 +215,7 @@ enable: $(@bind enable_randomness CheckBox())
 """
 
 # ╔═╡ 5dadb371-3387-4485-8804-2f689e24161b
-1 isa Number
+partition ∈ grid
 
 # ╔═╡ 63866178-5ad2-48b8-88d2-9eaadd73fabf
 if enable_randomness
