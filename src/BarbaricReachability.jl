@@ -4,6 +4,15 @@ struct SimulationModel
 	samples_per_axis
 end
 
+function worst_case_memory_usage(m::SimulationModel, grid::Grid)
+	# We assume every sample reaches a different partition
+	axis_samples = prod(m.samples_per_axis)
+	randomness_samples = prod(m.samples_per_axis[i] for (i, _) in enumerate(m.randomness_space.lower))
+	result = (grid.dimensions*length(grid)*(axis_samples + randomness_samples))/1.049e+6
+	result = round(result, digits=2)
+	"$(result)mb"
+end
+
 # Returns a list of states that are possible outcomes from the initial partition
 # according to the supporting points.
 function possible_outcomes(model::SimulationModel, partition::Partition, action)
@@ -66,7 +75,7 @@ end
 function draw_barbaric_transition!(model, 
 		partition::Partition, 
 		action, 
-		slice;
+		slice=[:,:];
 		colors=(:black, :gray),
 		plotargs...)
 

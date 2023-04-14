@@ -1,19 +1,33 @@
-function get_transitions(reachability_function, actions, grid)
+function memory_usage_for_precomputed_reachability(result_size, grid::Grid)
+	# Assuming 1 byte per integer. 
+	# A partition is saved with 1 integer per dimension.
+	# And then these are stored in a matrix same size as the grid.
+	"$(round((result_size*grid.dimensions + length(grid))/1.049e+6, digits=2))mb"
+end
+
+function get_transitions(reachability_function::Function, actions, grid::Grid)
 	result = Dict()
+	result_size = 0
+	print_every = 10000
 	
 	for action in actions
 		result[action] = Array{Vector{Any}}(undef, size(grid))
 	end
 	
-	for partition in grid
+	for (i, partition) in enumerate(grid)
 		for action in actions
-			result[action][partition.indices...] = reachability_function(partition, action)
+			reachable = reachability_function(partition, action)
+			result_size += length(reachable)
+			result[action][partition.indices...] = reachable
 		end
+
+		i%print_every == 0 && @debug "Precomputed for partition $i out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
 	end
+	@debug "Precomputed for partition $(length(grid)) out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
 	result
 end
 
-function get_transitions(reachability_function, actions::Type, grid)
+function get_transitions(reachability_function::Function, actions::Type, grid::Grid)
 	get_transitions(reachability_function, instances(actions), grid)
 end
 
@@ -67,15 +81,16 @@ function shield_step(R_computed::Dict{Any}, actions, grid::Grid)
 end
 
 function make_shield(R_computed::Dict{Any}, actions, grid::Grid; max_steps=typemax(Int))
-	i = max_steps
+	i = 0
 	grid′ = nothing
-	while i > 0
+	while i < max_steps
 		grid′ = shield_step(R_computed, actions, grid)
 		if grid′.array == grid.array
 			break
 		end
 		grid = grid′
-		i -= 1
+		i += 1
+		@debug "Finished fixed point iteration $i."
 	end
 	(result=grid′, max_steps_reached=i==0)
 end
