@@ -14,7 +14,7 @@ struct SupportingPoints
     end
 end
 
-function get_spacing_sizes(s::SupportingPoints, dimensionality)
+function get_spacing_sizes(s::SupportingPoints, dimensionality::Int64)
     upper, lower = s.bounds.upper, s.bounds.lower
     spacings = [upper[dim] - lower[dim] for dim in 1:dimensionality]
     spacings = [s.per_axis[dim] == 1 ?  0 :  spacing/(s.per_axis[dim] - 1) 
@@ -58,7 +58,7 @@ Base.iterate(s::SupportingPoints, state) = begin
     
     dimensionality = get_dim(s.bounds)
     spacings, indices = state
-    indices = copy(indices)
+    #indices = copy(indices)
 
     for dim in 1:dimensionality
         indices[dim] += 1
