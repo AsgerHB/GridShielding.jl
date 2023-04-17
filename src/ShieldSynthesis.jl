@@ -92,7 +92,7 @@ function make_shield(R_computed::Dict{Any}, actions, grid::Grid; max_steps=typem
 		i += 1
 		@debug "Finished fixed point iteration $i."
 	end
-	(result=grid′, max_steps_reached=i==0)
+	(result=grid′, max_steps_reached=i==max_steps)
 end
 
 
