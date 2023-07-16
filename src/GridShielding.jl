@@ -3,6 +3,7 @@ module GridShielding
 using Plots
 using Serialization
 
+# TODO: Only export relevant names (remember to update the testing-notebooks).
 export Bounds,  get_dim, bounded, magnitude
 include("Bounds.jl")
 
@@ -18,7 +19,7 @@ include("BarbaricReachability.jl")
 export actions_to_int, int_to_actions
 include("ActionConversion.jl")
 
-export get_transitions, make_shield, shield_step, make_shield, draw_shield, shielding_function, get_shielding_function
+export get_transitions, make_shield, shield_step, draw_shield, shielding_function, get_shielding_function
 include("ShieldSynthesis.jl")
 
 
