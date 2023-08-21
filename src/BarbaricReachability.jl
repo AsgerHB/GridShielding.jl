@@ -19,8 +19,10 @@ end
 function possible_outcomes(model::SimulationModel, partition::Partition, action)
 	
 	result = []
-	for point in SupportingPoints(model.samples_per_axis, partition)
-		for random_outcomes in SupportingPoints(model.samples_per_axis, model.randomness_space)
+	bounds = Bounds(partition)
+	bounds = Bounds(bounds.lower, [prevfloat(u) for u in bounds.upper]) # Upper bounds are not inclusive
+	for point in SupportingPoints(model.samples_per_axis, bounds)
+		for random_outcomes in SupportingPoints(model.samples_per_random_axis, model.randomness_space)
 			point′ = model.simulation_function(point, action, random_outcomes)
 			push!(result, point′)
 		end
@@ -30,8 +32,10 @@ end
 
 function get_reachable_area(model::SimulationModel, partition::Partition, action)
 	result = Set()
-	for point in SupportingPoints(model.samples_per_axis, partition)
-		for random_outcomes in SupportingPoints(model.samples_per_axis, model.randomness_space)
+	bounds = Bounds(partition)
+	bounds = Bounds(bounds.lower, [prevfloat(u) for u in bounds.upper]) # Upper bounds are not inclusive
+	for point in SupportingPoints(model.samples_per_axis, bounds)
+		for random_outcomes in SupportingPoints(model.samples_per_random_axis, model.randomness_space)
 			point′ = model.simulation_function(point, action, random_outcomes)
 			point′ isa Tuple ||@show point′
 			if point′ ∉ partition.grid
