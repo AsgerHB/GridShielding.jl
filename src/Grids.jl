@@ -6,7 +6,6 @@ struct Grid
     array
 end
 
-    
 function Grid(granularity, lower_bounds, upper_bounds)
     dimensions = length(lower_bounds)
     
@@ -117,6 +116,15 @@ Base.in(s::Union{Vector, Tuple}, partition::Partition) = begin
 		end
 	end
 	return true
+end
+
+Base.deepcopy(grid::Grid) = begin
+	
+	result = Grid(grid.granularity, grid.bounds.lower, grid.bounds.upper)
+	for (i, v) in enumerate(grid.array)
+		result.array[i] = v
+	end
+	return result
 end
 
 function set_value!(partition::Partition, value)
