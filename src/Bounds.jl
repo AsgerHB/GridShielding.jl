@@ -90,3 +90,18 @@ end
 function magnitude(bounds::Bounds, axis)
     bounds.upper[axis] - bounds.lower[axis]
 end
+
+# Draw bounds as rectangles
+@recipe function rectangle(bounds::Bounds, pad=0.00) 
+	l, u = bounds.lower, bounds.upper
+	xl, yl = l .- pad
+	xu, yu = u .+ pad
+	Shape(
+		[xl, xl, xu, xu],
+		[yl, yu, yu, yl])
+end
+
+# # Draw bounds as rectangles
+# @recipe function rectangle(bounds::AbstractArray{Bounds}, pad=0.00)
+# 	[rectangle(b, pad) for b in bounds]
+# end
