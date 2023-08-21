@@ -2,6 +2,7 @@ struct SimulationModel
 	simulation_function::Function
 	randomness_space::Bounds
 	samples_per_axis
+	samples_per_random_axis
 end
 
 function worst_case_memory_usage(m::SimulationModel, grid::Grid)

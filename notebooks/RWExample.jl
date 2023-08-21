@@ -348,7 +348,7 @@ All of this is wrapped up in the following model `struct` just to make the call 
 """
 
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
-model = SimulationModel(simulation_function, randomness_space, samples_per_axis)
+model = SimulationModel(simulation_function, randomness_space, samples_per_axis, samples_per_axis)
 
 # ╔═╡ ae886eaa-b8e1-471d-9804-2e724352ad4e
 begin

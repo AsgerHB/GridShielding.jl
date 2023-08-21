@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -174,6 +174,8 @@ Try experimenting with different values.
 `samples_per_axis_v =` $(@bind samples_per_axis_v NumberField(1:30, default=3))
 
 `samples_per_axis_p =` $(@bind samples_per_axis_p NumberField(1:30, default=3))
+
+`samples_per_axis_random =` $(@bind samples_per_axis_rand NumberField(1:30, default=3))
 """
 
 # ╔═╡ 80efecb0-d269-45a1-974a-de8a4c8a06d3
@@ -239,7 +241,7 @@ All of this is wrapped up in the following model `struct` just to make the call 
 """
 
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
-model = SimulationModel(simulation_function, randomness_space, samples_per_axis)
+model = SimulationModel(simulation_function, randomness_space, samples_per_axis, (samples_per_axis_random,))
 
 # ╔═╡ ae886eaa-b8e1-471d-9804-2e724352ad4e
 begin
