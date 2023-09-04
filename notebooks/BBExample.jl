@@ -157,7 +157,7 @@ md"""
 
 The initialized grid is shown in the following figure.
 
-Choosing a very low granularity might make the figure hard to see, and cause slowness. There is also a bug where chosing an uneven granularity will cause the grid to be misaligned. So it can be turned off below.
+Choosing a very fine granularity might make the figure hard to see, and cause slowness. There is also a bug where chosing an uneven granularity will cause the grid to be misaligned. So it can be turned off below.
 
 `show_grid:` $(@bind show_grid CheckBox(default=false))
 """
@@ -175,7 +175,6 @@ Try experimenting with different values.
 
 `samples_per_axis_p =` $(@bind samples_per_axis_p NumberField(1:30, default=3))
 
-`samples_per_axis_random =` $(@bind samples_per_axis_rand NumberField(1:30, default=3))
 """
 
 # ╔═╡ 80efecb0-d269-45a1-974a-de8a4c8a06d3
@@ -216,15 +215,21 @@ Use the following checkbox to add the random factor to the number of supporting 
 enable: $(@bind enable_randomness CheckBox())
 """
 
-# ╔═╡ 5dadb371-3387-4485-8804-2f689e24161b
-partition ∈ grid
+# ╔═╡ 4124666b-384b-4451-8c36-fb1649ed85b3
+if enable_randomness
+md""" 
+`samples_per_axis_random =` $(@bind samples_per_axis_random NumberField(1:30, default=3))"""
+else
+	samples_per_axis_random = 0
+	nothing # Suppress output
+end
 
 # ╔═╡ 63866178-5ad2-48b8-88d2-9eaadd73fabf
 if enable_randomness
 	randomness_space = Bounds((-1,), (1,))
 else
 	randomness_space = Bounds((-1,), (-1,))
-end
+end;
 
 # ╔═╡ 53937382-f37e-4935-bd8c-88d8c3c4240b
 md"""
@@ -278,7 +283,7 @@ reachability_function = get_barbaric_reachability_function(model)
 md"""
 ### Result
 
-Putting it all together.
+The reachability function from above can be used to compute a safety strategy from the initial `grid`.
 """
 
 # ╔═╡ 492a369c-c21f-4900-b736-e36ee7d72a33
@@ -287,18 +292,18 @@ begin
 	@bind make_shield_button CounterButton("Make Shield")
 end
 
+# ╔═╡ d5e3fd5a-8f0d-4d13-a134-04ddaf8483b7
+if make_shield_button > 0
+	reachability_function_precomputed = 
+		get_transitions(reachability_function, BB.Action, grid)
+end
+
 # ╔═╡ ca166647-c150-43dc-8271-f3ac47ccb051
 md"""
 Try starting at 1 and then stepping through the iterations.
 
 `max_steps=` $(@bind max_steps NumberField(1:1000, default=1000))
 """
-
-# ╔═╡ d5e3fd5a-8f0d-4d13-a134-04ddaf8483b7
-if make_shield_button > 0
-	reachability_function_precomputed = 
-		get_transitions(reachability_function, BB.Action, grid)
-end
 
 # ╔═╡ d112a057-f541-43cf-89cf-68f74887cdfa
 begin
@@ -323,8 +328,8 @@ if shield !== nothing
 		xlim=(grid.bounds.lower[1], grid.bounds.upper[1]), 
 		ylim=(grid.bounds.lower[2], grid.bounds.upper[2]), 
 		legend=:outertop,
-		xlabel="x",
-		ylabel="t")
+		xlabel="velocity",
+		ylabel="position")
 end
 
 # ╔═╡ 072735c7-10ce-4e89-9f9a-a531caad5af5
@@ -361,8 +366,14 @@ Adjust the number of runs you want to simulate, and let us see if the agent is a
 # ╔═╡ 2785eca1-90df-470e-8461-d243a5deb7ee
 hits_rarely = BB.random_policy(0.05)
 
+# ╔═╡ c96fe092-9bf8-4ee5-95db-de9e66d90a13
+[hits_rarely((v, p)) for _ in 1:10]
+
 # ╔═╡ 98c53a10-e832-440d-931e-23006f22d3b4
 shielded_hits_rarely = apply_shield(shield, hits_rarely)
+
+# ╔═╡ 3ce807e9-f681-472b-9411-6215d2574b55
+[shielded_hits_rarely((v, p)) for _ in 1:10]
 
 # ╔═╡ 1a14c4c9-8630-4396-a50c-be7a37ba9a6b
 shielded_hits_rarely((1, 5))
@@ -398,7 +409,7 @@ begin
 end
 
 # ╔═╡ fe4bd8df-67ab-4572-89bb-7ef7e4aab267
-call() do
+if make_shield_button > 0 let
 	refresh_button
 	shielded_lazy = apply_shield(shield, _ -> nohit)
 	
@@ -406,7 +417,7 @@ call() do
 			(0, 7), 
 			shielded_hits_rarely, 10)...,
 		left_background=shield_plot)
-end
+end end
 
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
@@ -439,7 +450,7 @@ end
 # ╠═0ae7a407-9bf8-470e-977f-a1701302f4a3
 # ╠═f93e9e9b-7622-406b-b7d4-482365833fbd
 # ╟─04dbeb6f-024d-4899-a9eb-0634f8f352f1
-# ╠═5dadb371-3387-4485-8804-2f689e24161b
+# ╟─4124666b-384b-4451-8c36-fb1649ed85b3
 # ╠═63866178-5ad2-48b8-88d2-9eaadd73fabf
 # ╟─48c1b86b-983d-4a55-a0d2-652c1ce2c544
 # ╠═dc971f77-a2bd-47bd-a9df-0786041e77b0
@@ -447,18 +458,20 @@ end
 # ╠═b0138efc-3a7d-46a5-9095-528ba9d7663f
 # ╟─7fdda9f4-0dc4-44c6-af98-be1df62ce635
 # ╟─492a369c-c21f-4900-b736-e36ee7d72a33
-# ╟─ca166647-c150-43dc-8271-f3ac47ccb051
 # ╠═d5e3fd5a-8f0d-4d13-a134-04ddaf8483b7
+# ╟─ca166647-c150-43dc-8271-f3ac47ccb051
 # ╠═d112a057-f541-43cf-89cf-68f74887cdfa
 # ╟─0ee2563c-e191-47db-a01f-b9308f814d78
 # ╠═072735c7-10ce-4e89-9f9a-a531caad5af5
 # ╟─78dbd9b5-4c89-48dd-821e-458d30b15473
 # ╠═51e9dec7-e55e-48c8-8b18-f19e4f75b358
 # ╠═2785eca1-90df-470e-8461-d243a5deb7ee
+# ╠═c96fe092-9bf8-4ee5-95db-de9e66d90a13
 # ╠═98c53a10-e832-440d-931e-23006f22d3b4
+# ╠═3ce807e9-f681-472b-9411-6215d2574b55
 # ╠═1a14c4c9-8630-4396-a50c-be7a37ba9a6b
 # ╠═0379ff26-3df9-47d8-a93f-4f4cb4f724b4
 # ╠═211419f0-8e80-4463-bcf3-e15f3e3272e0
 # ╠═e77ccf1a-1e75-400e-967a-7412fd76ca51
 # ╟─296a0e19-3178-4329-91de-54bdafdacdd1
-# ╠═fe4bd8df-67ab-4572-89bb-7ef7e4aab267
+# ╟─fe4bd8df-67ab-4572-89bb-7ef7e4aab267
