@@ -6,6 +6,10 @@ struct Grid
     array
 end
 
+function Grid(granularity, bounds::Bounds)
+	Grid(granularity, bounds.lower, bounds.upper)
+end
+
 function Grid(granularity, lower_bounds, upper_bounds)
     dimensions = length(lower_bounds)
     
