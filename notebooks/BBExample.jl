@@ -220,7 +220,7 @@ if enable_randomness
 md""" 
 `samples_per_axis_random =` $(@bind samples_per_axis_random NumberField(1:30, default=3))"""
 else
-	samples_per_axis_random = 0
+	samples_per_axis_random = 1
 	nothing # Suppress output
 end
 
