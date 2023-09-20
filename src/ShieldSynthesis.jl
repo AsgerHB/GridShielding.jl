@@ -19,6 +19,7 @@ function get_transitions(reachability_function::Function,
 	end
 	
 	for (i, partition) in enumerate(grid)
+		get_value(partition) == actions_to_int([]) && continue
 		for action in actions
 			reachable::Vector{Vector{Int64}} = reachability_function(partition, action)
 			result_size += length(reachable)
