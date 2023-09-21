@@ -7,8 +7,11 @@ using Serialization
 export Bounds,  get_dim, bounded, magnitude
 include("Bounds.jl")
 
-export Grid, Partition, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover, robust_grid_serialization, robust_grid_deserialization, stringdump, get_c_library_header
+export Grid, Partition, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover
 include("Grids.jl")
+
+export robust_grid_serialization, robust_grid_deserialization, get_c_library_header, get_libshield
+include("Serialisation.jl")
 
 export SupportingPoints, get_spacing_sizes
 include("SuppotingPoints.jl")
