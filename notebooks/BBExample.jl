@@ -77,10 +77,17 @@ begin
 end
 
 # ╔═╡ 8564347e-489d-47a6-b0be-ba6b69445707
-bbshieldlabels = 	["{hit, nohit}", "{hit}", "{nohit}", "{}"]
+bbshieldlabels = 	[
+	"{$(join(int_to_actions(BB.Action, i), ", "))}"
+	for i in 0:3]
 
 # ╔═╡ 2f5e4800-eb30-413a-9031-9afd00bc11cc
 bbshieldcolors = [colorant"#ff9178", colorant"#a1eaff",  colorant"#a1eaaa",  colorant"#ffffff"]
+
+# ╔═╡ 8c40e39d-b692-4e94-93a6-95fab78ddc61
+Dict(
+	0 => (:black, "{}"),
+)
 
 # ╔═╡ 93f81afe-bd36-4a1e-96a7-9fc53316a770
 md"""
@@ -125,7 +132,7 @@ In practice, this means it should bounce back with more than $1^m/{}_s$.
 
 # ╔═╡ fcd23ebf-2465-41b5-9b75-f6d43c518b60
 begin
-	is_safe(state) = abs(state[1]) > 1 || state[2] > 0
+	is_safe(state) = !(abs(state[1]) < 1 && state[2] < 0.1)
 	is_safe(bounds::Bounds) = is_safe((bounds.lower[1], bounds.lower[2]))
 end
 
@@ -143,13 +150,13 @@ The grid is defined by the upper and lower bounds on the state space, and some `
 granularity = [granularity_v, granularity_p]
 
 # ╔═╡ 9cbfce51-3a4d-49ad-abc9-101294b96724
-any_action, no_action = actions_to_int([]), actions_to_int([BB.hit BB.nohit])
+any_action, no_action = actions_to_int([BB.hit BB.nohit]), actions_to_int([])
 
 # ╔═╡ 0a25f7fe-db47-4d20-856f-6417474b1c2a
 begin
 	grid = Grid(granularity, (-15, 0), (15, 8))
 
-	initialize!(grid, x -> is_safe(x) ? no_action : any_action)
+	initialize!(grid, x -> is_safe(x) ? any_action : no_action)
 end
 
 # ╔═╡ f88cd709-a35f-4365-9624-91244a0c113a
@@ -428,6 +435,7 @@ end end
 # ╟─816cbb33-8a9a-4fb4-a701-339c4b9e4bcb
 # ╠═8564347e-489d-47a6-b0be-ba6b69445707
 # ╠═2f5e4800-eb30-413a-9031-9afd00bc11cc
+# ╠═8c40e39d-b692-4e94-93a6-95fab78ddc61
 # ╟─93f81afe-bd36-4a1e-96a7-9fc53316a770
 # ╠═3c8d70bd-2d7b-4260-8304-4f1e4ea74719
 # ╠═279fc983-2cbc-406f-babd-1ad0c0f9c05a
