@@ -1,13 +1,17 @@
-struct Bounds
-    lower
-    upper
+struct Bounds{T}
+    lower::Vector{T}
+    upper::Vector{T}
 
-    function Bounds(lower, upper)
+    function Bounds(lower::Vector{T}, upper::Vector{T}) where T
         if length(lower) != length(upper)
             error("Inconsistent dimensionality")
         end
-        return new(lower, upper)
+        return new{T}(lower, upper)
     end
+end
+
+function Bounds(lower::Tuple, upper::Tuple)
+    Bounds(lower |> collect, upper |> collect)
 end
 
 function Bounds(lower::Dict, upper::Dict, dimensionality)

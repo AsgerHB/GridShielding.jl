@@ -5,30 +5,34 @@ function memory_usage_for_precomputed_reachability(result_size, grid::Grid)
 	"$(round((result_size*grid.dimensions + length(grid))/1.049e+6, digits=2))mb"
 end
 
-function get_transitions(reachability_function::Function, actions, grid::Grid)
-	result = Dict()
+function get_transitions(reachability_function::Function, 
+			actions::A, 
+			grid::Grid
+		)::Dict{T, Array{Vector{Vector{Int64}}}} where {T, A<:AbstractArray{T}}
+
+	result = Dict{T, Array{Vector{Vector{Int64}}}}()
 	result_size = 0
 	print_every = 10000
 	
 	for action in actions
-		result[action] = Array{Vector{Any}}(undef, size(grid))
+		result[action] = Array{Vector{Vector{Int64}}}(undef, size(grid))
 	end
 	
 	for (i, partition) in enumerate(grid)
 		for action in actions
-			reachable = reachability_function(partition, action)
+			reachable::Vector{Vector{Int64}} = reachability_function(partition, action)
 			result_size += length(reachable)
 			result[action][partition.indices...] = reachable
 		end
 
-		i%print_every == 0 && @debug "Precomputed for partition $i out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
+		#i%print_every == 0 && @debug "Precomputed for partition $i out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
 	end
-	@debug "Precomputed for partition $(length(grid)) out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
+	#@debug "Precomputed for partition $(length(grid)) out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
 	result
 end
 
 function get_transitions(reachability_function::Function, actions::Type, grid::Grid)
-	get_transitions(reachability_function, instances(actions), grid)
+	get_transitions(reachability_function, instances(actions) |> collect, grid)
 end
 
 function make_shield(reachability_function::Function, actions, grid::Grid; max_steps=typemax(Int))
@@ -36,9 +40,10 @@ function make_shield(reachability_function::Function, actions, grid::Grid; max_s
 	make_shield(R_computed, actions, grid; max_steps)
 end
 
-function get_new_value(R_computed::Dict{Any}, actions, partition::Partition)
-	bad = actions_to_int([]) # No actions allowed in this partition; do not go here.
+function get_new_value(R_computed::Dict{Y, Array{Vector{Vector{Int64}}}}, actions::Vector, partition::Partition{T})::T where {T, Y}
+	bad::T = actions_to_int([]) # No actions allowed in this partition; do not go here.
 	value = get_value(partition)
+	array = partition.grid.array
 
 	if value == bad # Bad partitions stay bad. 
 		return bad
@@ -47,12 +52,11 @@ function get_new_value(R_computed::Dict{Any}, actions, partition::Partition)
  	result = []
 
 	for action in actions
-		reachable = R_computed[action][partition.indices...]
-		reachable = [Partition(partition.grid, i) for i in reachable]
+		reachable::Vector{Vector{Int64}} = R_computed[action][partition.indices...]
 		
 		action_allowed = true
-		for partition′ in reachable
-			if get_value(partition′) == bad
+		for r in reachable # For each reachable partition... (partition data type not used, to save time.)
+			if array[r...]::T == bad # I didn't know you could type-decorate specific things like this. For some reason, julia can't infer that type, so this is a huge speed-up.
 				action_allowed = false
 				break
 			end
@@ -66,13 +70,9 @@ function get_new_value(R_computed::Dict{Any}, actions, partition::Partition)
 	actions_to_int(result)
 end
 
-function get_new_value(R_computed::Dict{Any}, actions::Type, partition::Partition)
-	get_new_value(R_computed, instances(actions), partition)
-end
-
 #Take a single step in the fixed point compuation.
-function shield_step(R_computed::Dict{Any}, actions, grid::Grid)
-	grid′ = Grid(grid.granularity, grid.bounds.lower, grid.bounds.upper)
+function shield_step(R_computed::Dict, actions::Vector, grid::Grid)
+	grid′ = Grid(grid.granularity, grid.dimensions, grid.bounds, grid.size, copy(grid.array))
 
 	for partition in grid
 		grid′.array[partition.indices...] = get_new_value(R_computed, actions, partition)
@@ -80,9 +80,9 @@ function shield_step(R_computed::Dict{Any}, actions, grid::Grid)
 	grid′
 end
 
-function make_shield(R_computed::Dict{Any}, actions, grid::Grid; max_steps=typemax(Int))
+function make_shield(R_computed::Dict, actions::Vector, grid::Grid; max_steps=typemax(Int))
 	i = 0
-	grid′ = nothing
+	grid′ = grid
 	while i < max_steps
 		grid′ = shield_step(R_computed, actions, grid)
 		if grid′.array == grid.array
@@ -93,6 +93,10 @@ function make_shield(R_computed::Dict{Any}, actions, grid::Grid; max_steps=typem
 		@debug "Finished fixed point iteration $i."
 	end
 	(result=grid′, max_steps_reached=i==max_steps)
+end
+
+function make_shield(R_computed::Dict, actions, grid::Grid; max_steps=typemax(Int))
+	make_shield(R_computed, actions |> instances |> collect, grid; max_steps)
 end
 
 

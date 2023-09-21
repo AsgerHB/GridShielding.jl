@@ -1,35 +1,32 @@
-struct Grid
-    granularity
-    dimensions::Int
-    bounds::Bounds
-    size
-    array
+struct Grid{T, N<:Number, U<:Number, M<:Number}
+    granularity::Vector{N}
+    dimensions::U
+    bounds::Bounds{M}
+    size::Vector{U}
+    array::Array{T}
 end
 
-function Grid(granularity, bounds::Bounds)
-	Grid(granularity, bounds.lower, bounds.upper)
+function Grid(granularity, bounds_lower, bounds_upper; data_type=Int8)
+	Grid(granularity, Bounds(bounds_lower, bounds_upper); data_type)
 end
 
-function Grid(granularity, lower_bounds, upper_bounds)
-    dimensions = length(lower_bounds)
-    
-    if dimensions != length(upper_bounds)
-        throw(ArgumentError("Inconsistent dimensionality"))
-    end
+function Grid(granularity, bounds::Bounds; data_type=Int8)
+    dimensions = get_dim(bounds)
 	if granularity isa Number
 		granularity = [granularity for _ in 1:dimensions]
 	end
 
     size = zeros(Int, dimensions)
-    for (i, (lb, ub)) in enumerate(zip(lower_bounds, upper_bounds))
+    for (i, (lb, ub)) in enumerate(zip(bounds.lower, bounds.upper))
         size[i] = ceil((ub-lb)/granularity[i])
     end
 
 	if granularity isa Number
 		granularity = Tuple(granularity for _ in 1:dimensions)
 	end
-    array = zeros(Int8, (size...,))
-    Grid(granularity, dimensions, Bounds(lower_bounds, upper_bounds), size, array)
+	# NO-COMMIT: let user choose instead.
+    array = zeros(data_type, (size...,))
+    Grid(granularity, dimensions, bounds, size, array)
 end
 
 Base.show(io::IO, grid::Grid) = println(io, 
@@ -40,8 +37,8 @@ Base.length(grid::Grid) = length(grid.array)
 
 Base.size(grid::Grid) = size(grid.array)
 
-struct Partition
-    grid::Grid
+struct Partition{T}
+    grid::Grid{T}
     indices::Vector{Int}
 end
 
@@ -141,7 +138,7 @@ function set_values!(partitions::Vector{Partition}, value)
 	end
 end
 
-function get_value(partition::Partition)
+function get_value(partition::Partition{T})::T where T
 	partition.grid.array[partition.indices...]
 end
 

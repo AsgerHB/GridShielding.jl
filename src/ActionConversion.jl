@@ -5,7 +5,7 @@ Convert a set of actions to a single integer, using bit-encoding. Actions will b
 
 **Warning:** Duplicates will lead to undefined behaviour. 
 """
-function actions_to_int(actions)
+function actions_to_int(actions)::Int64
 	init = 0
 	sum(2^(Int(action)) for action in actions; init)
 end

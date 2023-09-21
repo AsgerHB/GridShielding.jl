@@ -37,7 +37,6 @@ function get_reachable_area(model::SimulationModel, partition::Partition, action
 	for point in SupportingPoints(model.samples_per_axis, bounds)
 		for random_outcomes in SupportingPoints(model.samples_per_random_axis, model.randomness_space)
 			point′ = model.simulation_function(point, action, random_outcomes)
-			point′ isa Tuple ||@show point′
 			if point′ ∉ partition.grid
 				continue
 			end
