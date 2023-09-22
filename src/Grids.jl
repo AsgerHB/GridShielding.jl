@@ -3,7 +3,7 @@ struct Grid{T, N<:Number, U<:Number, M<:Number}
     dimensions::U
     bounds::Bounds{M}
     size::Vector{U}
-    array::Array{T}
+    array::Array{T}	# TODO: ::A<:Array{T}
 end
 
 function Grid(granularity, bounds_lower, bounds_upper; data_type=Int8)

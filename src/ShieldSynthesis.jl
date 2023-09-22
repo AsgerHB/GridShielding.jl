@@ -6,9 +6,9 @@ function memory_usage_for_precomputed_reachability(result_size, grid::Grid)
 end
 
 function get_transitions(reachability_function::Function, 
-			actions::A, 
+			actions::Vector{T}, 
 			grid::Grid
-		)::Dict{T, Array{Vector{Vector{Int64}}}} where {T, A<:AbstractArray{T}}
+		)::Dict{T, Array{Vector{Vector{Int64}}}} where {T}
 
 	result = Dict{T, Array{Vector{Vector{Int64}}}}()
 	result_size = 0
@@ -71,29 +71,39 @@ function get_new_value(R_computed::Dict{Y, Array{Vector{Vector{Int64}}}}, action
 	actions_to_int(result)
 end
 
-#Take a single step in the fixed point compuation.
-function shield_step(R_computed::Dict, actions::Vector, grid::Grid)
-	grid′ = Grid(grid.granularity, grid.dimensions, grid.bounds, grid.size, copy(grid.array))
+"""
+	shield_step(R_computed::Dict, actions::Vector, grid::Grid, destination::Grid)
+
+Take a single step in the fixed point compuation.
+
+**Args**
+	- `R_computed`: Pre-computed reachability function. See `get_transitions`.
+	- `actions`: Vector of actions to try for each partition in `grid`.
+	- `grid`: Grid which contains a partial safety strategy which will be read from to do the shield step.
+	- `destination`: Second grid data structure which the result will be written to.
+"""
+function shield_step(R_computed::Dict, actions::Vector, grid::Grid, destination::Grid)
 
 	for partition in grid
-		grid′.array[partition.indices...] = get_new_value(R_computed, actions, partition)
+		destination.array[partition.indices...] = get_new_value(R_computed, actions, partition)
 	end
-	grid′
+	destination
 end
 
 function make_shield(R_computed::Dict, actions::Vector, grid::Grid; max_steps=typemax(Int))
 	i = 0
-	grid′ = grid
+	grid1 = Grid(grid.granularity, grid.dimensions, grid.bounds, grid.size, copy(grid.array))
+	grid2 = Grid(grid.granularity, grid.dimensions, grid.bounds, grid.size, copy(grid.array))
 	while i < max_steps
-		grid′ = shield_step(R_computed, actions, grid)
-		if grid′.array == grid.array
+		shield_step(R_computed, actions, grid1, grid2)
+		if grid2.array == grid1.array
 			break
 		end
-		grid = grid′
+		grid1, grid2 = grid2, grid1
 		i += 1
 		@debug "Finished fixed point iteration $i."
 	end
-	(result=grid′, max_steps_reached=i==max_steps)
+	(result=grid2, max_steps_reached=i==max_steps)
 end
 
 function make_shield(R_computed::Dict, actions, grid::Grid; max_steps=typemax(Int))
