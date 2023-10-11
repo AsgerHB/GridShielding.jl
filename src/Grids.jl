@@ -87,6 +87,8 @@ function box(grid::Grid, state...)
 	box(grid, (state))
 end
 
+Base.:(==)(a::Grid, b::Grid) = a.array == b.array
+
 Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
 	for dim in 1:grid.dimensions
 		if !(grid.bounds.lower[dim] <= state[dim] < grid.bounds.upper[dim])

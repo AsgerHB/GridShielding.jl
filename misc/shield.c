@@ -1,26 +1,28 @@
 /*  
-    This file 
+This file is a dependency of the julia function get_libshield.
+This funciton compiles this file together with a header "shield.h" and an associated shield binary dump shield_dump.o.
+shield_dump.o is obtained by calling 
+    ld -r -b binary "shield" -o "shield_dump.o"
+Where "shield" is a binary file containing the raw array of a grid.
 
-    To this day I have no idea how to write a makefile.
-    Some files are required which can be generated with the julia function `get_libshield(shield; [working_dir])` that should be lying around somewhere.
+To this day I have no idea how to write a makefile.
  Run as
-    test: 
-        echo "\n\n" && gcc -Wall shield.c -o shield.o && ./shield.o
-
     library:
-        gcc -c -fPIC shield.c -o shield.o && gcc -shared -o libshield.so shield.o
+        gcc -c -fPIC shield.c -o shield.o
+        gcc -shared shield_dump.o shield.o shield.h  -o libshield.so
 
 */
 
 #include<stdio.h>
 #include<stdbool.h>
+#include <math.h>
 #include "shield.h"
 
 // Turns out using -1 is accidentally clever.
 // -1 is shorthand for "any action" since its bit-representation is 111111...1
 const int OUT_OF_BOUNDS = -1;
 
-int get_index(int indices[])
+int convert_index(int indices[])
 {
     int index = 0;
     int multiplier = 1;
@@ -30,16 +32,22 @@ int get_index(int indices[])
         index += multiplier*indices[dim];
         multiplier *= size[dim];
     }
+    return index;
+}
+
+long get_index(int indices[])
+{
+    int index = convert_index(indices);
     // Multiply by 8 because we go from char to int64.
-    return (int) _binary_shield_start[index*8];
+    return (long) ((long*) _binary_shield_start)[index];
 }
 
 int box(double  value, int dim)
 {
-    return (int) ((value - lower_bounds[dim])/granularity[dim]);
+    return (int) floor((value - lower_bounds[dim])/granularity[dim]);
 }
 
-int get_value_from_vector(double s[])
+long get_value_from_vector(double s[])
 {
     int indices[dimensions];
     int dim;
@@ -55,11 +63,9 @@ int get_value_from_vector(double s[])
     return get_index(indices);
 }
 
-int get_value(double s1, double s2)
+    // SEARCH-AND-REPLACED: The term (double s1, double s2) should not be changed since it will be altered programatically
+long get_value(double s1, double s2)
 {
+    // SEARCH-AND-REPLACED: The term {s1, s2} should not be changed since it will be altered programatically
     return get_value_from_vector((double[]){s1, s2});
-}
-
-int main() {
-    return 0;
 }
