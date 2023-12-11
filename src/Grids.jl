@@ -89,7 +89,10 @@ end
 
 Base.:(==)(a::Grid, b::Grid) = a.array == b.array
 
-Base.in(state::Union{Vector, Tuple}, grid::Grid) = begin
+#= I'm beginning to understand the advice of not having too specific type decorations because this function signature has been an issue for me multiple times. It used to be Base.in(state::Union{Vector, Tuple}, grid::Grid), but many times I've tried to check things like Int ∈ Grid by mistake. 
+The ∈ operator has a bunch of type signatures, including just returning "false" in the most general case (which is very slow for some reason). So if I made a type error when using it with a grid or partition, it would just silently return "false" because I'd specified the check to only be for tuples and vectors.
+=#
+Base.in(state, grid::Grid) = begin
 	for dim in 1:grid.dimensions
 		if !(grid.bounds.lower[dim] <= state[dim] < grid.bounds.upper[dim])
 			return false
@@ -111,7 +114,7 @@ function Bounds(partition::Partition)
 	Bounds(lower, upper)
 end
 
-Base.in(s::Union{Vector, Tuple}, partition::Partition) = begin
+Base.in(s, partition::Partition) = begin
 	bounds = Bounds(partition)
 	for dim in 1:length(s)
 		if !(bounds.lower[dim] <= s[dim] < bounds.upper[dim])
