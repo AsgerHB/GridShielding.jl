@@ -73,6 +73,19 @@ Base.intersect(a::Bounds, b::Bounds) = begin
 	Bounds(lower, upper)
 end
 
+Base.clamp(x, bounds::Bounds) = begin
+	x′ = copy(x)
+	clamp!(x, bounds)
+end
+
+Base.clamp!(x, bounds::Bounds) = begin
+	for i in 1:get_dim(bounds)
+		x[i] = clamp(x[i], bounds.lower[i], bounds.upper[i])
+	end
+	x
+end
+
+
 function bounded(bounds::Bounds)
 	for b in bounds.lower
 		if b == -Inf || b == Inf
