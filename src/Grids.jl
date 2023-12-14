@@ -6,6 +6,21 @@ struct Grid{T, N<:Number, U<:Number, M<:Number}
     array::Array{T}	# TODO: ::A<:Array{T}
 end
 
+
+"""
+    get_size(granularity, bounds::Bounds)
+
+Compute the size for a grid with the given bounds and granualrities. Might be good to call before actually allocating that amount of memoryy.
+"""
+function get_size(granularity, bounds::Bounds)
+    dimensions = get_dim(bounds)
+	size = zeros(Int, dimensions)
+    for (i, (lb, ub)) in enumerate(zip(bounds.lower, bounds.upper))
+        size[i] = ceil((ub-lb)/granularity[i])
+    end
+	size
+end
+
 function Grid(granularity, bounds_lower, bounds_upper; data_type=Int8)
 	Grid(granularity, Bounds(bounds_lower, bounds_upper); data_type)
 end
@@ -16,10 +31,7 @@ function Grid(granularity, bounds::Bounds; data_type=Int8)
 		granularity = [granularity for _ in 1:dimensions]
 	end
 
-    size = zeros(Int, dimensions)
-    for (i, (lb, ub)) in enumerate(zip(bounds.lower, bounds.upper))
-        size[i] = ceil((ub-lb)/granularity[i])
-    end
+    size = get_size(granularity, bounds)
 
 	if granularity isa Number
 		granularity = Tuple(granularity for _ in 1:dimensions)

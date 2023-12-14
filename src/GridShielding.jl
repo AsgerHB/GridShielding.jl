@@ -5,10 +5,10 @@ using Serialization
 using ProgressLogging
 
 # TODO: Only export relevant names (remember to update the testing-notebooks).
-export Bounds,  get_dim, bounded, magnitude
+export Bounds, get_dim, bounded, magnitude
 include("Bounds.jl")
 
-export Grid, Partition, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover
+export Grid, Partition, get_size, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover
 include("Grids.jl")
 
 export robust_grid_serialization, robust_grid_deserialization, get_c_library_header, get_libshield
