@@ -12,20 +12,19 @@ function get_transitions(reachability_function::Function,
 
 	result = Dict{T, Array{Vector{Vector{Int64}}}}()
 	result_size = 0
-	print_every = 10000
+	#print_every = 10000
 	
 	for action in actions
 		result[action] = Array{Vector{Vector{Int64}}}(undef, size(grid))
 	end
 	
-	for (i, partition) in enumerate(grid)
+	@progress for (i, partition) in enumerate(grid)
 		get_value(partition) == actions_to_int([]) && continue
 		for action in actions
 			reachable::Vector{Vector{Int64}} = reachability_function(partition, action)
 			result_size += length(reachable)
 			result[action][partition.indices...] = reachable
 		end
-
 		#i%print_every == 0 && @debug "Precomputed for partition $i out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."
 	end
 	#@debug "Precomputed for partition $(length(grid)) out of $(length(grid)).\nMemory usage: $(memory_usage_for_precomputed_reachability(result_size, grid))."

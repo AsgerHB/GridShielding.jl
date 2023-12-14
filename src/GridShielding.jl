@@ -2,6 +2,7 @@ module GridShielding
 
 using Plots
 using Serialization
+using ProgressLogging
 
 # TODO: Only export relevant names (remember to update the testing-notebooks).
 export Bounds,  get_dim, bounded, magnitude
