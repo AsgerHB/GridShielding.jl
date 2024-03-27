@@ -83,7 +83,15 @@ function draw_barbaric_transition!(model,
 		colors=(:black, :gray),
 		plotargs...)
 
-	ix, iy = indexof((==(Colon())), slice)
+	
+	ix, iy = 0, 0
+	if 1 == count((==(Colon())), slice)
+		ix = iy = 1
+	elseif 2 != count((==(Colon())), slice)
+		throw(ArgumentError("The slice argument should be an array of indices and exactly two colons. Example: [:, 10, :]"))
+	else
+		ix, iy = indexof((==(Colon())), slice)
+	end
 	
 	samples = [s for s in SupportingPoints(model.samples_per_axis, partition)]
 	scatter!([s[ix] for s in samples], [s[iy] for s in samples],

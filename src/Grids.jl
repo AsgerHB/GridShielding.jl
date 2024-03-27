@@ -86,7 +86,7 @@ function box(grid::Grid, state)
 
 	for dim in 1:grid.dimensions
 		if !(grid.bounds.lower[dim] <= state[dim] < grid.bounds.upper[dim])
-			throw(ArgumentError("State is out of bounds for this grid"))
+			throw(ArgumentError("State $state is outside this grid's bounds $(grid.bounds)"))
 		end
 		
 		indices[dim] = floor(Int, (state[dim] - grid.bounds.lower[dim])/grid.granularity[dim]) + 1
