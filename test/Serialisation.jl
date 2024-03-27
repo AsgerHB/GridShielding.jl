@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.36
 
 using Markdown
 using InteractiveUtils
@@ -25,25 +25,31 @@ begin
 	using PlutoLinks
 	using PlutoUI
 	using Distributions
+	using ZipFile
+	using PyCall
 	TableOfContents()
 end
+
+# ╔═╡ 5db17b6d-62b9-4339-b2b4-64472c9e0318
+Pkg.add("PyCall")
 
 # ╔═╡ 515c5c0b-a734-406c-b89d-6c921001a777
 @revise using GridShielding
 
 # ╔═╡ e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 md"""
-# Bouncing Ball Example
+# Serializatoin Tests
 
 ## Preface
 """
 
-# ╔═╡ 7612a253-eda4-47a8-bb93-d5fcccc6c628
-begin
-end
-
 # ╔═╡ 1c03e3a8-6de3-49ff-a05d-c22fc41a5de7
 ⨝ = joinpath
+
+# ╔═╡ 670ff2b2-cb12-4840-857f-7d720bc71834
+md"""
+## Example Grid
+"""
 
 # ╔═╡ 55cd8522-c016-455b-bfb5-0257e8ccc334
 r = 0.9
@@ -96,7 +102,7 @@ let
 	draw(grid, slice,
 		xlabel="x",
 		ylabel="y",
-		label="z=0",
+		title="z=0",
 		colors=[:white, :wheat],
 		aspectratio=:equal,
 		size=(500, 300))
@@ -105,12 +111,27 @@ let
 end
   ╠═╡ =#
 
+# ╔═╡ 37d1be0a-8920-4df5-8e4e-8682ef8b86fc
+md"""
+##  Robust Grid (De)Serialization
+"""
+
 # ╔═╡ 9af0dcfa-6699-4eb9-bfe1-e99ff010b12f
 begin
+	# Reactivity
 	@use_file "/home/asger/.julia/dev/GridShielding/misc/shield.c"
 	grid
+
 	working_dir = mktempdir()
 end
+
+# ╔═╡ 292ecf52-e588-4ee6-96f7-f313fb825a64
+@bind open_folder_button CounterButton("Open Folder")
+
+# ╔═╡ c62e53c0-c580-4313-8f1a-1c8f63299a5e
+if open_folder_button > 0
+	run(`nautilus $working_dir`, wait=false)
+end; "This cell opens `$working_dir` in nautilus"
 
 # ╔═╡ 8c814127-99fa-4eb0-99a9-d82c68d2fd4e
 grid
@@ -207,12 +228,84 @@ let
 	sort(tests, by=t -> t isa PlutoTest.Fail, rev=true)
 end
 
+# ╔═╡ 65457eee-e990-4797-9929-cefb437c855d
+md"""
+## Python Export
+"""
+
+# ╔═╡ f9a4f12e-d3a9-4875-ace2-e214f7bf1c00
+@enum Action foo bar
+
+# ╔═╡ ffaf9dbd-8608-4bd6-814e-cc6fa6aad57d
+begin
+	grid′ = Grid(grid.granularity, grid.bounds)
+
+	for partition in grid
+		partition′ = Partition(grid′, partition.indices)
+		set_value!(partition′, get_value(partition) >= 1 ? rand((1, 2, 3)) : 0)
+	end
+end
+
+# ╔═╡ be9d9689-c594-4536-9ef5-d6b7f5c1d218
+@doc get_meta_info
+
+# ╔═╡ 5aec68ca-10ea-4705-81c5-6ae7d4d3c299
+typeof([])<:AbstractArray
+
+# ╔═╡ 5db23cbc-8251-4a9a-b4e9-6decf1a6efa6
+let
+	slice::Vector{Any} = partition.indices
+	slice[1] = slice[2] = Colon()
+	
+	draw(grid′, slice,
+		xlabel="x",
+		ylabel="y",
+		title="z=0",
+		colors=[:white, :wheat, :beige, :moccasin],
+		aspectratio=:equal,
+		size=(500, 300))
+end
+
+# ╔═╡ d5e30af2-ee54-4132-847e-74e8b1af3eb2
+get_meta_info(grid′,
+	variables=["x", "y"], 
+	binary_variables=String[],
+	actions=Action,
+	env_id="test grid")
+
+# ╔═╡ 70fc0404-ac2e-491c-8776-c49d4bb16bbb
+grid_zip = working_dir ⨝ "grid.zip"
+
+# ╔═╡ e1af4cc0-c631-49e4-8df3-73000e96243a
+numpy_zip_file(grid′, grid_zip,
+	variables=["x", "y"], 
+	binary_variables=String[],
+	actions=Action,
+	env_id="test grid")
+
+# ╔═╡ b10e5910-99bb-4ba3-b366-ebf78ab0b9fe
+np = pyimport("numpy")
+
+# ╔═╡ 24b3e394-3f00-4720-86d0-4acd9cc51b00
+let
+	array = nothing
+	for f in ZipFile.Reader(grid_zip).files
+		if f.name == "grid.npy"
+			grid_npy = working_dir ⨝ "grid.npy"
+			write(grid_npy, f)
+			array = np.load(grid_npy)
+		end
+	end
+	@test grid′.array == array
+end
+
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 # ╠═bb902940-a858-11ed-2f11-1d6f5af61e4a
-# ╠═7612a253-eda4-47a8-bb93-d5fcccc6c628
+# ╠═5db17b6d-62b9-4339-b2b4-64472c9e0318
 # ╠═1c03e3a8-6de3-49ff-a05d-c22fc41a5de7
 # ╠═515c5c0b-a734-406c-b89d-6c921001a777
+# ╟─670ff2b2-cb12-4840-857f-7d720bc71834
 # ╠═55cd8522-c016-455b-bfb5-0257e8ccc334
 # ╠═2a90dc85-62ab-42a9-85ba-5ad4f1d58aae
 # ╠═76231c64-67f4-4763-b26c-5f8fac3e6e10
@@ -220,7 +313,10 @@ end
 # ╠═d1a62487-04c8-4162-815e-8a9257f6d049
 # ╟─6e395fff-e3d9-4b69-9fa2-0b012883a1c4
 # ╟─189387ac-d7fa-4328-ad11-df2740ace9a2
+# ╟─37d1be0a-8920-4df5-8e4e-8682ef8b86fc
 # ╠═9af0dcfa-6699-4eb9-bfe1-e99ff010b12f
+# ╠═292ecf52-e588-4ee6-96f7-f313fb825a64
+# ╠═c62e53c0-c580-4313-8f1a-1c8f63299a5e
 # ╠═8c814127-99fa-4eb0-99a9-d82c68d2fd4e
 # ╠═9d84159b-6bd7-4e86-89cd-fc0673c2b6ef
 # ╠═91ad5f38-27c6-4de7-8514-3af5b0714fcf
@@ -244,3 +340,14 @@ end
 # ╠═4c994427-caac-4106-8c73-0ced38302059
 # ╠═3e50f49b-ae5a-4c9b-9930-d2abf3539dbc
 # ╠═880437c4-f74d-4e0b-9795-acf52fe40332
+# ╟─65457eee-e990-4797-9929-cefb437c855d
+# ╠═f9a4f12e-d3a9-4875-ace2-e214f7bf1c00
+# ╠═ffaf9dbd-8608-4bd6-814e-cc6fa6aad57d
+# ╠═be9d9689-c594-4536-9ef5-d6b7f5c1d218
+# ╠═5aec68ca-10ea-4705-81c5-6ae7d4d3c299
+# ╟─5db23cbc-8251-4a9a-b4e9-6decf1a6efa6
+# ╠═d5e30af2-ee54-4132-847e-74e8b1af3eb2
+# ╠═70fc0404-ac2e-491c-8776-c49d4bb16bbb
+# ╠═e1af4cc0-c631-49e4-8df3-73000e96243a
+# ╠═b10e5910-99bb-4ba3-b366-ebf78ab0b9fe
+# ╠═24b3e394-3f00-4720-86d0-4acd9cc51b00

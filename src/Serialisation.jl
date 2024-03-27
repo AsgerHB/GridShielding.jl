@@ -1,5 +1,7 @@
 ⨝ = joinpath
 
+## Robust Grid (De)Serialisation ##
+
 """
     robust_grid_serialization(file, grid::Grid)	
 
@@ -42,6 +44,8 @@ function robust_grid_deserialization(file)
 	
 	grid
 end
+
+## Exporting as C library ##
 
 function file_replace(file_path, replacements...)
 	lines = readlines(file_path)
@@ -192,4 +196,87 @@ function stringdump(grid)
 	end
 	
 	return String(result)
+end
+
+## Exporting to Numpy array + JSON ##
+
+function export_numpy_array(grid, destination)
+	np = pyimport("numpy")
+	pyshield = np.array(grid.array)
+	open(destination, write=true, create=true) do 🗋
+		np.save(🗋, pyshield)
+	end
+end
+
+"""
+	get_meta_info(grid::Grid; variables::A, binary_variables::A, actions::Type, env_id::S) 
+		where {A<:AbstractArray, S<:AbstractString}
+
+Returns a dictionary containing structured meta-info on the grid. 
+
+Arguments: (NB: Mostly KW)
+ - `grid`: The grid in question. Bounds and granularity are inferred from this.
+ - `variables`: Axis labels for axes that are not binary.
+ - `binary_variables`: Labels for axes that are binary.
+ - `actions`: Enum representing the available axes. This will be used to create an `id_to_actionset` list.
+ - `env_id`: Descriptive name of the grid.
+
+Example: 
+
+	get_meta_info(grid′,
+		variables=["x", "y"], 
+		binary_variables=["a"],
+		actions=Action,
+		env_id="test grid")
+"""
+function get_meta_info(grid::Grid; variables::A, binary_variables::AA, actions::Type, env_id::S) where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
+	meta = (
+		"variables" => variables,
+		"env_id" => env_id,
+	
+		"id_to_actionset" => [
+			(a => [a′ ∈ int_to_actions(actions, a) for a′ in instances(actions)])
+			for a in unique(grid.array) ],
+	
+		"n_actions" => length(instances(actions)),
+		"actions" => instances(actions),
+		"bounds" => [grid.bounds.lower, grid.bounds.upper],
+		"granularity" => grid.granularity,
+		"bvars" => binary_variables
+	)
+end
+
+"""
+	numpy_zip_file(grid::Grid, destination; variables::A, binary_variables::AA, actions::Type, env_id::S) 
+	where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
+
+Returns a dictionary containing structured meta-info on the grid. 
+
+Arguments: (NB: Mostly KW)
+ - `grid`: The grid in question. Bounds and granularity are inferred from this.
+ - `destination`: File path to save to. Errors if exists.
+ - `variables`: Axis labels for axes that are not binary.
+ - `binary_variables`: Labels for axes that are binary.
+ - `actions`: Enum representing the available axes. This will be used to create an `id_to_actionset` list.
+ - `env_id`: Descriptive name of the grid.
+
+Example: 
+
+	numpy_zip_file(grid′, "path/to/save/grid.zip",
+		variables=["x", "y"], 
+		binary_variables=["a"],
+		actions=Action,
+		env_id="test grid")
+"""
+function numpy_zip_file(grid::Grid, destination; variables::A, binary_variables::AA, actions::Type, env_id::S) where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
+	w = ZipFile.Writer(destination)
+
+	np = pyimport("numpy")
+	pyshield = np.array(grid.array)
+	np.save(ZipFile.addfile(w, "grid.npy"), pyshield)
+	
+	meta_info = get_meta_info(grid; variables, binary_variables, actions, env_id)
+	
+	write(ZipFile.addfile(w, "meta.json"), JSON.json(meta_info))
+	close(w)
 end
