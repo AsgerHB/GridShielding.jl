@@ -73,14 +73,23 @@ Base.intersect(a::Bounds, b::Bounds) = begin
 	Bounds(lower, upper)
 end
 
-Base.clamp(x, bounds::Bounds) = begin
+Base.clamp(x::Vector, bounds::Bounds) = begin
 	x′ = copy(x)
 	clamp!(x, bounds)
 end
 
-Base.clamp!(x, bounds::Bounds) = begin
+Base.clamp!(x::Vector, bounds::Bounds) = begin
 	for i in 1:get_dim(bounds)
-		x[i] = clamp(x[i], bounds.lower[i], bounds.upper[i])
+        upper = bounds.upper[i]
+        if typeof(upper) <: AbstractFloat
+            upper = prevfloat(upper)
+        elseif  typeof(upper) <: Integer
+            upper -= 1
+        else
+            error("Unsupported type for upper bound: $(typeof(upper)) in bounds: $bounds")
+        end
+
+		x[i] = clamp(x[i], bounds.lower[i], upper)
 	end
 	x
 end
