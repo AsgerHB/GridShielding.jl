@@ -16,7 +16,7 @@ include("Bounds.jl")
 export Grid, Partition, get_size, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover
 include("Grids.jl")
 
-export robust_grid_serialization, robust_grid_deserialization, get_c_library_header, get_libshield, export_numpy_array, get_meta_info, export_meta_info, numpy_zip_file
+export robust_grid_serialization, robust_grid_deserialization, get_libshield, export_numpy_array, get_meta_info, export_meta_info, numpy_zip_file
 include("Serialisation.jl")
 
 export SupportingPoints, get_spacing_sizes

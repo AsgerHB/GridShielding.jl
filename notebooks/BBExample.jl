@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.36
 
 using Markdown
 using InteractiveUtils
@@ -159,6 +159,9 @@ begin
 	initialize!(grid, x -> is_safe(x) ? any_action : no_action)
 end
 
+# ╔═╡ 97efefd8-3f7e-49de-873e-4c6d330ae094
+length(grid)
+
 # ╔═╡ f88cd709-a35f-4365-9624-91244a0c113a
 md"""
 
@@ -202,6 +205,9 @@ p: $(@bind p Slider(grid.bounds.lower[2]:grid.granularity[2]:grid.bounds.upper[2
 
 Action: $(@bind action Select(BB.Action |> instances |> collect, default=BB.nohit))
 """
+
+# ╔═╡ 3856e2ec-cf76-4e77-be4c-8cb50c0a2ee3
+@time BB.simulate_point(BB.bbmechanics, (v, p), action)
 
 # ╔═╡ 0ae7a407-9bf8-470e-977f-a1701302f4a3
 v, p
@@ -426,6 +432,79 @@ if make_shield_button > 0 let
 		left_background=shield_plot)
 end end
 
+# ╔═╡ d3874e4e-330a-4a73-9196-891e8734ed22
+md"""
+# Exporting the Shield
+"""
+
+# ╔═╡ f9d340b6-1ae3-49e3-b0e1-24397ab9ead4
+@bind target_dir TextField(95, default=mktempdir())
+
+# ╔═╡ a905934b-2dc6-469e-b2a0-02a88e32777e
+target_dir; @bind open_folder_button CounterButton("Open Folder")
+
+# ╔═╡ 86f8adb3-36a0-4786-b039-69396a2ccf59
+if open_folder_button > 0
+	run(`nautilus $target_dir`, wait=false)
+end; "This cell opens `$target_dir` in nautilus"
+
+# ╔═╡ 0efd5f72-6779-4917-98a9-551b002da1c5
+md"""
+### Export as serialized julia-tuple
+
+Easy export and import between julia code.
+"""
+
+# ╔═╡ 6c0ee079-3341-4e01-9be9-16f7b234f79b
+let
+	filename = "BB.shield"
+	
+	robust_grid_serialization(joinpath(target_dir, filename), shield)
+	
+	"Exported `'$filename'`." |> Markdown.parse
+end
+
+# ╔═╡ 4ce7d893-2e63-4a17-8fb8-b27e717712b4
+md"""
+### Export as a function in a shared-object library
+
+Use this library to access the shield from C and C++ code.
+
+The shield is compiled into a shared-object binary, which exports the function `int get_value(double v, double p)`. It takes the state-variables as input and returns the bit-encoded list of allowed actions. (See `int_to_actions`.)
+"""
+
+# ╔═╡ 91e0c77f-1bc9-4b19-8e81-cae7af9991ee
+begin
+	shield_so = "shield.so"
+	shield_so = joinpath(target_dir, shield_so)
+	
+	get_libshield(shield; destination=shield_so, force=true)
+	
+	"Exported `'$shield_so'`." |> Markdown.parse
+end
+
+# ╔═╡ f040702a-e967-462f-91d4-627a418371f0
+md"""
+### Export to Numpy
+
+Exports a zip-file containing a serialized numpy-array along with a JSON file with details on how to read it.
+"""
+
+# ╔═╡ 9e92e58b-51d2-4656-8a18-9927aac7f643
+let
+
+	meta_info = (;variables=["v", "p"], 
+		#binary_variables=Int[], # Optional.
+		actions=BB.Action,
+		env_id="Bouncing Ball")
+	
+	filename = "shield.zip"
+	
+	numpy_zip_file(shield, joinpath(target_dir, filename); meta_info...)
+	
+	"Exported `'$filename'`." |> Markdown.parse
+end
+
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 # ╠═bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -436,6 +515,7 @@ end end
 # ╠═8564347e-489d-47a6-b0be-ba6b69445707
 # ╠═2f5e4800-eb30-413a-9031-9afd00bc11cc
 # ╠═8c40e39d-b692-4e94-93a6-95fab78ddc61
+# ╠═3856e2ec-cf76-4e77-be4c-8cb50c0a2ee3
 # ╟─93f81afe-bd36-4a1e-96a7-9fc53316a770
 # ╠═3c8d70bd-2d7b-4260-8304-4f1e4ea74719
 # ╠═279fc983-2cbc-406f-babd-1ad0c0f9c05a
@@ -447,10 +527,11 @@ end end
 # ╠═fcd23ebf-2465-41b5-9b75-f6d43c518b60
 # ╟─fe4f171c-a582-475b-9719-a77e7369c4bd
 # ╠═0791f41e-ccb8-4f62-a006-26448778c373
+# ╠═97efefd8-3f7e-49de-873e-4c6d330ae094
 # ╠═0a25f7fe-db47-4d20-856f-6417474b1c2a
 # ╠═9cbfce51-3a4d-49ad-abc9-101294b96724
 # ╟─f88cd709-a35f-4365-9624-91244a0c113a
-# ╟─ae886eaa-b8e1-471d-9804-2e724352ad4e
+# ╠═ae886eaa-b8e1-471d-9804-2e724352ad4e
 # ╟─fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╠═80efecb0-d269-45a1-974a-de8a4c8a06d3
 # ╟─9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
@@ -483,3 +564,13 @@ end end
 # ╠═e77ccf1a-1e75-400e-967a-7412fd76ca51
 # ╟─296a0e19-3178-4329-91de-54bdafdacdd1
 # ╟─fe4bd8df-67ab-4572-89bb-7ef7e4aab267
+# ╟─d3874e4e-330a-4a73-9196-891e8734ed22
+# ╠═f9d340b6-1ae3-49e3-b0e1-24397ab9ead4
+# ╟─a905934b-2dc6-469e-b2a0-02a88e32777e
+# ╟─86f8adb3-36a0-4786-b039-69396a2ccf59
+# ╟─0efd5f72-6779-4917-98a9-551b002da1c5
+# ╠═6c0ee079-3341-4e01-9be9-16f7b234f79b
+# ╟─4ce7d893-2e63-4a17-8fb8-b27e717712b4
+# ╠═91e0c77f-1bc9-4b19-8e81-cae7af9991ee
+# ╟─f040702a-e967-462f-91d4-627a418371f0
+# ╠═9e92e58b-51d2-4656-8a18-9927aac7f643

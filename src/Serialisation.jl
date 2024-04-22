@@ -102,12 +102,12 @@ end
 """
     get_libshield(shield::Grid; [destination, working_dir, force=false])
 
-Serialize the provided grid into a shared object (.so) file along with a C function to look up its values.
+Serialize the provided grid into a shared object (.so) library with a C function to look up its values.
 Easily access the shield with any application that can make C function calls. 
 
-The so-file exports the function `get_value(double s1, double s2, double s3)`. 
+The shared-object binary exports the function `int get_value(double s1, double s2, double s3)`. 
 Number of arguments is the same as the dimensionality of the shield. 
-Returns the integer value for the corresponding state.
+Returns the bit-encoded list of allowed actions. (See `int_to_actions`.)
 
 !!! example
     For a Random Walk shield, `get_value(0.9, 0.1)` would return `3`, 
@@ -176,11 +176,11 @@ end
 Returns a dictionary containing structured meta-info on the grid. 
 
 Arguments: (NB: Mostly KW)
- - `grid`: The grid in question. Bounds and granularity are inferred from this.
- - `variables`: Axis labels for axes that are not binary.
- - `binary_variables`: Labels for axes that are binary.
- - `actions`: Enum representing the available axes. This will be used to create an `id_to_actionset` list.
- - `env_id`: Descriptive name of the grid.
+ - `grid`: The grid in question. Bounds and granularity are read from it.
+ - `variables`: Names of all variables, including binary variables. 
+ - `binary_variables`: Indices of axes that are binary, e.g. pump status on/off.
+ - `actions`: Enum representing the available actions. This will be used to create an `id_to_actionset` list.
+ - `env_id`: Descriptive name of the environment the shield is synthesized for.
 
 Example: 
 
@@ -190,14 +190,14 @@ Example:
 		actions=Action,
 		env_id="test grid")
 """
-function get_meta_info(grid::Grid; variables::A, binary_variables::AA, actions::Type, env_id::S) where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
-	meta = (
-		"variables" => variables,
+function get_meta_info(grid::Grid; variables::A, binary_variables::AA=Int[], actions::Type, env_id::S) where {A<:AbstractArray, AA<:Vector{Int64}, S<:AbstractString}
+	Dict(
+		"variables" => vcat(variables),
 		"env_id" => env_id,
 	
-		"id_to_actionset" => [
-			(a => [a′ ∈ int_to_actions(actions, a) for a′ in instances(actions)])
-			for a in unique(grid.array) ],
+		"id_to_actionset" => 
+			Dict(a => [a′ ∈ int_to_actions(actions, a) for a′ in instances(actions)]
+			for a in 0:actions_to_int(instances(actions))),
 	
 		"n_actions" => length(instances(actions)),
 		"actions" => instances(actions),
@@ -211,7 +211,7 @@ end
 	numpy_zip_file(grid::Grid, destination; variables::A, binary_variables::AA, actions::Type, env_id::S) 
 	where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
 
-Returns a dictionary containing structured meta-info on the grid. 
+Returns a packged shied containing a numpy array and meta-info on how to read it.
 
 Arguments: (NB: Mostly KW)
  - `grid`: The grid in question. Bounds and granularity are inferred from this.
@@ -229,7 +229,7 @@ Example:
 		actions=Action,
 		env_id="test grid")
 """
-function numpy_zip_file(grid::Grid, destination; variables::A, binary_variables::AA, actions::Type, env_id::S) where {A<:AbstractArray, AA<:AbstractArray, S<:AbstractString}
+function numpy_zip_file(grid::Grid, destination; variables::A, binary_variables::AA=Int[], actions::Type, env_id::S) where {A<:AbstractArray, AA<:Vector{Int64}, S<:AbstractString}
 	w = ZipFile.Writer(destination)
 
 	np = pyimport("numpy")
