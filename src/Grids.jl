@@ -1,3 +1,7 @@
+"""
+	Grid(granularity, bounds_lower, bounds_upper; [data_type=Int8])
+	Grid(granularity, bounds::Bounds; [data_type=Int8])
+"""
 struct Grid{T, N<:Number, U<:Number, M<:Number}
     granularity::Vector{N}
     dimensions::U
@@ -166,7 +170,7 @@ function clear!(grid::Grid)
 end
 
 function initialize!(grid::Grid, value_function=(_) -> 1)
-	for partition in grid
+	@progress for partition in grid
 		set_value!(partition, value_function(Bounds(partition)))
 	end
 end
