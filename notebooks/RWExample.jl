@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.36
 
 using Markdown
 using InteractiveUtils
@@ -76,7 +76,7 @@ begin
 end
 
 # ╔═╡ 8564347e-489d-47a6-b0be-ba6b69445707
-rwshieldlabels = 	["{fast, slow}", "{fast}", "{}"]
+rwshieldlabels = 	["{fast, slow}", "{fast}", "{}"] |> reverse
 
 # ╔═╡ 2f5e4800-eb30-413a-9031-9afd00bc11cc
 rwshieldcolors = 	[colorant"#ff9178", colorant"#a1eaff", colorant"#ffffff"]
@@ -191,17 +191,6 @@ call() do
 		push!(reactive_as, a)
 	end
 	"Fast"
-end
-
-# ╔═╡ 350ddf9d-5963-4779-9c6d-a8b03cd2b48c
-begin
-	reset_button, slow_button, fast_button
-	plot(aspectratio=:equal, size=(500, 500), xlabel="x", ylabel="t")
-	xlims!(rwmechanics.x_min, rwmechanics.x_max + 0.1)
-	ylims!(rwmechanics.t_min, rwmechanics.t_max + 0.1)
-	RW.draw_walk!(reactive_xs, reactive_ts, reactive_as)
-	RW.draw_next_step!(rwmechanics, reactive_xs[end], reactive_ts[end])
-	plot!(lims=(0, 1.2))
 end
 
 # ╔═╡ 07c0b465-9d2e-4da8-901a-c96b8ee35653
@@ -415,6 +404,22 @@ begin
 	end
 end
 
+# ╔═╡ 350ddf9d-5963-4779-9c6d-a8b03cd2b48c
+begin
+	reset_button, slow_button, fast_button
+	if shield != nothing
+		draw(shield, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
+	else
+		plot()
+	end
+	plot!(aspectratio=:equal, size=(500, 500), xlabel="x", ylabel="t")
+	xlims!(rwmechanics.x_min, rwmechanics.x_max + 0.1)
+	ylims!(rwmechanics.t_min, rwmechanics.t_max + 0.1)
+	RW.draw_walk!(reactive_xs, reactive_ts, reactive_as)
+	RW.draw_next_step!(rwmechanics, reactive_xs[end], reactive_ts[end])
+	plot!(lims=(0, 1.2))
+end
+
 # ╔═╡ 0ee2563c-e191-47db-a01f-b9308f814d78
 if shield !== nothing
 	draw(shield, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
@@ -490,6 +495,6 @@ RW.evaluate(rwmechanics, (_, _) -> RW.slow)
 # ╟─492a369c-c21f-4900-b736-e36ee7d72a33
 # ╟─ca166647-c150-43dc-8271-f3ac47ccb051
 # ╠═d112a057-f541-43cf-89cf-68f74887cdfa
-# ╟─0ee2563c-e191-47db-a01f-b9308f814d78
+# ╠═0ee2563c-e191-47db-a01f-b9308f814d78
 # ╟─78dbd9b5-4c89-48dd-821e-458d30b15473
 # ╠═f05e0180-27ca-4f7c-b9a9-ff20052539ca
