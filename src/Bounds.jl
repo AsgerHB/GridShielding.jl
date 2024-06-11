@@ -126,6 +126,10 @@ function magnitude(bounds::Bounds, axis)
     bounds.upper[axis] - bounds.lower[axis]
 end
 
+function centre(bounds::Bounds)
+	bounds.lower .+ (magnitude(bounds) ./ 2)
+end
+
 # Draw bounds as rectangles
 @recipe function rectangle(bounds::Bounds, pad=0.00) 
 	l, u = bounds.lower, bounds.upper

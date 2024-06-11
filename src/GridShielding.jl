@@ -10,7 +10,7 @@ using PyCall
 using ZipFile
 
 # TODO: Only export relevant names (remember to update the testing-notebooks).
-export Bounds, get_dim, bounded, magnitude
+export Bounds, get_dim, bounded, magnitude, centre
 include("Bounds.jl")
 
 export Grid, Partition, get_size, box, bounds, set_value!, get_value, clear!, initialize!, indexof, draw, cover
