@@ -140,6 +140,8 @@ Base.in(s, partition::Partition) = begin
 	return true
 end
 
+Base.isequal(a::Partition, b::Partition) = a.indices == b.indices && a.grid === b.grid
+
 Base.deepcopy(grid::Grid) = begin
 	
 	result = Grid(grid.granularity, grid.bounds.lower, grid.bounds.upper)
