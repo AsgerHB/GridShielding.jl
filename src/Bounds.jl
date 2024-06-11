@@ -73,12 +73,12 @@ Base.intersect(a::Bounds, b::Bounds) = begin
 	Bounds(lower, upper)
 end
 
-Base.clamp(x::Vector, bounds::Bounds) = begin
+Base.clamp(x::V, bounds::Bounds) where V<:AbstractVector = begin
 	x′ = copy(x)
 	clamp!(x, bounds)
 end
 
-Base.clamp!(x::Vector, bounds::Bounds) = begin
+Base.clamp!(x::V, bounds::Bounds) where V<:AbstractVector = begin
 	for i in 1:get_dim(bounds)
         upper = bounds.upper[i]
         if typeof(upper) <: AbstractFloat
@@ -92,6 +92,15 @@ Base.clamp!(x::Vector, bounds::Bounds) = begin
 		x[i] = clamp(x[i], bounds.lower[i], upper)
 	end
 	x
+end
+
+
+Base.clamp!(bounds::Bounds, x::V) where V<:AbstractVector = begin
+    clamp!(x, bounds)
+end
+
+Base.clamp(bounds::Bounds, x::V) where V<:AbstractVector = begin
+    clamp(x, bounds)
 end
 
 
