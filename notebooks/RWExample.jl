@@ -157,12 +157,6 @@ begin
 	reset_button
 end
 
-# ╔═╡ 2016a048-9a70-4c52-8fb8-db5c4d6b00c4
-begin
-	reset_button
-	@bind fast_button CounterButton("Fast")
-end
-
 # ╔═╡ 0789062a-5583-4757-8d47-11101bdfebef
 begin
 	reset_button
@@ -179,6 +173,12 @@ call() do
 		push!(reactive_as, a)
 	end
 	"Slow"
+end
+
+# ╔═╡ 2016a048-9a70-4c52-8fb8-db5c4d6b00c4
+begin
+	reset_button
+	@bind fast_button CounterButton("Fast")
 end
 
 # ╔═╡ 020d217e-b4ca-47c7-bcb6-f3ca880eb13f
@@ -246,7 +246,7 @@ md"""
 ### Grid
 The grid is defined by the upper and lower bounds on the state space, and some `granularity` which determines the size of the partitions.
 
-`granularity =` $(@bind granularity NumberField(0.001:0.001:1, default=0.1))
+`granularity =` $(@bind granularity NumberField(0.001:0.001:1, default=0.02))
 """
 
 # ╔═╡ 0a25f7fe-db47-4d20-856f-6417474b1c2a
@@ -255,7 +255,7 @@ begin
 		[rwmechanics.x_max + 0.2, 
 		 rwmechanics.t_max + 0.2])
 
-	initialize!(grid, is_safe)
+	initialize!(grid, state -> is_safe(state) ? any_action : no_action)
 end
 
 # ╔═╡ f88cd709-a35f-4365-9624-91244a0c113a
@@ -309,7 +309,7 @@ This is required, as otherwise it will only consider the average outcome, and no
 
 Use the following checkbox to add the random factor $\epsilon$ to the number of supporting points.
 
-enable: $(@bind enable_randomness CheckBox())
+enable: $(@bind enable_randomness CheckBox(default=true))
 """
 
 # ╔═╡ 1685ea67-dcb2-4484-a58b-24c68b9ff2f2
@@ -393,21 +393,17 @@ Try starting at 1 and then stepping through the iterations.
 
 # ╔═╡ d112a057-f541-43cf-89cf-68f74887cdfa
 begin
-	shield, max_steps_reached = nothing, false
-	
-	if make_shield_button > 0
-
-		# here is the computation
-		shield, max_steps_reached = 
+	shield, max_steps_reached = if make_shield_button > 0
 			make_shield(reachability_function, RW.Pace, grid; max_steps)
-		
+	else
+		nothing, true
 	end
 end
 
 # ╔═╡ 350ddf9d-5963-4779-9c6d-a8b03cd2b48c
 begin
 	reset_button, slow_button, fast_button
-	if shield != nothing
+	if !isnothing(shield)
 		draw(shield, [:,:]; show_grid, colors=rwshieldcolors, color_labels=rwshieldlabels)
 	else
 		plot()
@@ -418,6 +414,16 @@ begin
 	RW.draw_walk!(reactive_xs, reactive_ts, reactive_as)
 	RW.draw_next_step!(rwmechanics, reactive_xs[end], reactive_ts[end])
 	plot!(lims=(0, 1.2))
+end
+
+# ╔═╡ 53bd68b3-732b-4fc9-80a9-2cafa8bc5567
+if shield == grid 
+	md"👇"
+end
+
+# ╔═╡ ce090d6e-0695-4a24-b156-63111fcf5b78
+if shield == grid 
+	md"👆"
 end
 
 # ╔═╡ 0ee2563c-e191-47db-a01f-b9308f814d78
@@ -436,11 +442,85 @@ end
 md"""
 ## Evaluating the shield
 
-TODO
+First we create a random strategy, and see that this is not safe. To do this, we use the function `evaluate_safety`, which takes as input two function
+- The first takes no arguments, and just generates a trace using a pre-defined strategy.
+- The second takes a state as input, and returns a boolean indicating if the state is safe.
+
+Then, we shield this strategy using the function `apply_shield`, and see that the strategy has been made safe. (Remember to **include randomness** in the simulation function!)
 """
 
-# ╔═╡ f05e0180-27ca-4f7c-b9a9-ff20052539ca
-RW.evaluate(rwmechanics, (_, _) -> RW.slow)
+# ╔═╡ b96e16ad-89b9-4aba-bf2c-dd8eb3e837e0
+md"""
+### The Random Policy
+"""
+
+# ╔═╡ 3445e875-6b17-4095-81e0-12d14bbebb8a
+random_policy = (_) -> rand([RW.slow, RW.fast])
+
+# ╔═╡ 9b874656-7849-42db-81dd-fe63f542cafc
+function generate_random_trace()
+	trace = RW.simulate_trace(rwmechanics, (x, t) -> random_policy((x, t)))
+	trace.states, trace.actions
+end
+
+# ╔═╡ a79e73f7-8321-43c3-8010-a65b6a89a25c
+random_policy_safety_report = evaluate_safety(generate_random_trace, is_safe, 100)
+
+# ╔═╡ 4606efb3-2699-4366-9a8b-57f8f927da6e
+begin
+	plot(title="Example of Random Trace",
+		size=(400, 400))
+	
+	RW.draw_walk!(random_policy_safety_report.example_trace...)
+end
+
+# ╔═╡ 27441981-e782-473a-8c06-08df624310d4
+"""
+### Shielding the Random Policy
+$(isnothing(shield) ? "Press the **Make Shield** button above to continue." : "")
+""" |> Markdown.parse
+
+# ╔═╡ 85b73888-4c65-4729-b8a5-942fe1cc02d9
+@bind checks NumberField(1:10^20, default=1000)
+
+# ╔═╡ e7666cd9-85bb-4988-bc41-4579d7004384
+function apply_shield(shield::Grid, policy::Function, action_type)
+	return (state) -> begin
+		partition = box(shield, state)
+		allowed = int_to_actions(action_type, get_value(partition))
+		proposed = policy(state)
+		if proposed ∈ allowed || length(allowed) == 0
+			return proposed
+		else
+			return rand(allowed)
+		end
+	end
+end
+
+# ╔═╡ b2640474-e699-453b-ab4d-dbd8a6522557
+if !isnothing(shield)
+	shielded_random_policy = apply_shield(shield, random_policy, RW.Pace)
+end
+
+# ╔═╡ e7eea2e3-4c8c-4916-b507-6f6f31e0182c
+function generate_shielded_trace()
+	trace = RW.simulate_trace(rwmechanics, (x, t) -> shielded_random_policy((x, t)))
+	trace.states, trace.actions
+end
+
+# ╔═╡ 47f9de08-7cce-4bfb-b9d5-6861d4bf3d5f
+if !isnothing(shield)
+	shielded_policy_safety_report = 
+		evaluate_safety(generate_shielded_trace, is_safe, checks)
+end
+
+# ╔═╡ 86278691-5afd-43ef-9f52-eb16700626de
+if !isnothing(shield)
+	plot(title="Example of Shielded Trace",
+		size=(400, 400))
+	
+	RW.draw_walk!(shielded_policy_safety_report.example_trace...)
+end
 
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
@@ -465,9 +545,9 @@ RW.evaluate(rwmechanics, (_, _) -> RW.slow)
 # ╟─c82e064e-5cf1-4a7c-b03f-8bdf0fd6fc14
 # ╟─3f5edaad-6263-4d78-ace0-58fde4e86c5b
 # ╟─622f76c4-e4e9-439d-9a85-de3006d3e24b
-# ╟─2016a048-9a70-4c52-8fb8-db5c4d6b00c4
-# ╟─0533cbab-dbc8-4daa-9930-af34ebaef314
 # ╟─0789062a-5583-4757-8d47-11101bdfebef
+# ╟─0533cbab-dbc8-4daa-9930-af34ebaef314
+# ╟─2016a048-9a70-4c52-8fb8-db5c4d6b00c4
 # ╟─020d217e-b4ca-47c7-bcb6-f3ca880eb13f
 # ╟─350ddf9d-5963-4779-9c6d-a8b03cd2b48c
 # ╟─07c0b465-9d2e-4da8-901a-c96b8ee35653
@@ -492,9 +572,22 @@ RW.evaluate(rwmechanics, (_, _) -> RW.slow)
 # ╠═2d02e8df-a044-4dd2-bef0-07c80e68293b
 # ╠═b0138efc-3a7d-46a5-9095-528ba9d7663f
 # ╟─7fdda9f4-0dc4-44c6-af98-be1df62ce635
+# ╟─53bd68b3-732b-4fc9-80a9-2cafa8bc5567
 # ╟─492a369c-c21f-4900-b736-e36ee7d72a33
+# ╟─ce090d6e-0695-4a24-b156-63111fcf5b78
 # ╟─ca166647-c150-43dc-8271-f3ac47ccb051
 # ╠═d112a057-f541-43cf-89cf-68f74887cdfa
-# ╠═0ee2563c-e191-47db-a01f-b9308f814d78
+# ╟─0ee2563c-e191-47db-a01f-b9308f814d78
 # ╟─78dbd9b5-4c89-48dd-821e-458d30b15473
-# ╠═f05e0180-27ca-4f7c-b9a9-ff20052539ca
+# ╟─b96e16ad-89b9-4aba-bf2c-dd8eb3e837e0
+# ╠═3445e875-6b17-4095-81e0-12d14bbebb8a
+# ╠═9b874656-7849-42db-81dd-fe63f542cafc
+# ╠═a79e73f7-8321-43c3-8010-a65b6a89a25c
+# ╟─4606efb3-2699-4366-9a8b-57f8f927da6e
+# ╟─27441981-e782-473a-8c06-08df624310d4
+# ╠═85b73888-4c65-4729-b8a5-942fe1cc02d9
+# ╠═e7666cd9-85bb-4988-bc41-4579d7004384
+# ╠═b2640474-e699-453b-ab4d-dbd8a6522557
+# ╠═e7eea2e3-4c8c-4916-b507-6f6f31e0182c
+# ╠═47f9de08-7cce-4bfb-b9d5-6861d4bf3d5f
+# ╠═86278691-5afd-43ef-9f52-eb16700626de

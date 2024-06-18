@@ -47,17 +47,20 @@ function simulate_sequence(mechanics, initial_point,
 	t_hit, g, β1, ϵ1, β2, ϵ2, v_hit, p_hit  = mechanics
     v0, p0 = initial_point
     velocities::Vector{Real}, positions::Vector{Real}, times = [v0], [p0], [0.0]
+	actions = Action[]
     v, p, t = v0, p0, 0
     while times[end] <= duration - t_hit
-        action = policy((v, p))
-        v, p = simulate_point(mechanics, (v, p), action, 
+        a = policy((v, p))
+        v, p = simulate_point(mechanics, (v, p), a, 
 								min_v_on_impact=min_v_on_impact)
 		t += t_hit
         push!(velocities, v)
         push!(positions, p)
         push!(times, t)
+        push!(actions, a)
     end
-    velocities, positions, times
+	states=collect(zip(velocities, positions))
+    (;states, actions, times)
 end
 
 function evaluate(mechanics, policy, duration;
@@ -78,7 +81,7 @@ function evaluate(mechanics, policy, duration;
 	sum(costs)/runs
 end
 
-function check_safety(mechanics, policy, duration; runs=1000)
+function evaluate_safety(mechanics, policy, duration; runs=1000)
 	t_hit, g, β1, ϵ1, β2, ϵ2, v_hit, p_hit  = mechanics
 	deaths = 0
 	for run in 1:runs
@@ -94,15 +97,16 @@ function check_safety(mechanics, policy, duration; runs=1000)
 	deaths
 end
 
-function animate_trace(vs, ps, ts; fps=10, left_background=plot(), right_background=plot(), plotargs...)
-	
+function animate_trace(states, times; fps=10, left_background=plot(), right_background=plot(), plotargs...)
+	vs = [v for (v, p) in states]
+	ps = [p for (v, p) in states]
 	pmax = maximum(ps)
-	tmax = maximum(ts)
+	tmax = maximum(times)
 	vmin = minimum(vs)
 	vmax = maximum(vs)
 	layout = 2
 
-	animation = @animate for (i, _) in enumerate(ts)
+	animation = @animate for (i, _) in enumerate(times)
 
 		p1 = plot(left_background)
 
@@ -122,7 +126,7 @@ function animate_trace(vs, ps, ts; fps=10, left_background=plot(), right_backgro
 
 		p2 = plot(right_background)
 
-        plot!(ts[1:i], ps[1:i],
+        plot!(times[1:i], ps[1:i],
 				  xlims=(0, tmax), 
 				  ylims=(0, pmax),
 				  xlabel="t",

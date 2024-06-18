@@ -2,6 +2,7 @@ module GridShielding
 
 using Plots
 using ProgressLogging
+using HypothesisTests
 
 # Serialization stuff
 using Serialization
@@ -31,10 +32,13 @@ include("ActionConversion.jl")
 export get_transitions, make_shield, shield_step, draw_shield, shielding_function, get_shielding_function
 include("ShieldSynthesis.jl")
 
+export evaluate_safety
+include("EvaluateSafety.jl")
+
 
 module RW
 using Plots
-export rwmechanics, Pace, simulate, draw_next_step!, draw_walk!, take_walk, evaluate
+export rwmechanics, Pace, simulate, draw_next_step!, draw_walk!, simulate_trace
 include("RWExample.jl")
 end#module
 
@@ -42,7 +46,7 @@ module BB
 using Plots
 using StatsBase
 using Distributions
-export bbmechanics, Action, hit, nohit, simulate_point, simulate_sequence, evaluate, check_safety, animate_trace, random_policy
+export bbmechanics, Action, hit, nohit, simulate_point, simulate_sequence, evaluate, evaluate_safety, animate_trace, random_policy
 include("BBExample.jl")
 end#module
 

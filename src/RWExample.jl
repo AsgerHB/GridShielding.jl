@@ -54,12 +54,17 @@ function simulate(m::RWMechanics, x, t, a)
 	simulate(m::RWMechanics, x, t, a, random_outcomes)
 end
 
+struct Trace
+	states::Vector{Tuple{Float64, Float64}}
+	actions::Vector{Pace}
+	total_cost::Float64
+end
 
-function take_walk(m::RWMechanics, 
+function simulate_trace(m::RWMechanics, 
 					policy::Function;
                     cost_function=(x, t, a) -> a == fast ? 2 : 1)
 	xs, ts, actions = [m.x_min], [m.t_min], []
-	total_cost = 0
+	total_cost = 0.
 
 	while last(xs) < m.x_max && last(ts) < m.t_max
 		a = policy(last(xs), last(ts))
@@ -70,7 +75,7 @@ function take_walk(m::RWMechanics,
 		push!(actions, a)
 	end
 
-	(;xs, ts, actions, total_cost)
+	Trace(collect(zip(xs, ts)), actions, total_cost)
 end
 
 slow_color, fast_color = :coral, :cornflowerblue
@@ -109,7 +114,8 @@ function draw_next_step!(m::RWMechanics, x, t, a=:both;
 end
 
 
-function draw_walk!(xs, ts, actions, cost=nothing;
+function draw_walk!(xs, ts, actions; 
+		cost=nothing,
         colors=(slow=slow_color, fast=fast_color, line=:black))
     
     linecolors = [a == fast ? colors.fast : colors.slow for a in actions]
@@ -117,7 +123,7 @@ function draw_walk!(xs, ts, actions, cost=nothing;
     push!(linecolors, colors.line)
     push!(linestyles, :solid)
 
-    if cost !== nothing
+    if !isnothing(cost)
         scatter!([], m=(0, :white), msw=0, label="cost: $cost")
     end
     
@@ -129,25 +135,24 @@ function draw_walk!(xs, ts, actions, cost=nothing;
         linewidth=3,
         linecolor=linecolors,
         linestyle=linestyles,
-        legend=nothing)
+		lim=(0, 1.2),
+		xlabel="x",
+		ylabel="t",
+        label=nothing)
+
+	hline!([1], color=:gray, label=nothing)
+	vline!([1], color=:gray, label=nothing)
 end
 
+function draw_walk!(states, actions;
+		cost=nothing,
+		colors=(slow=slow_color, fast=fast_color, line=:black))
 
-function evaluate(m::RWMechanics, policy::Function; 
-        cost_function=(x, t, a) -> a == fast ? 2 : 1,
-        iterations=1000)
-    
-	losses = 0
-	costs = []
-	for i in 1:iterations
-		xs, ts, actions, cost = take_walk(m, policy; cost_function)
-		if ts[end] > m.x_max
-			losses += 1
-		end
-		push!(costs, cost)
-	end
-	perfect = losses == 0
-	average_wins = (iterations - losses) / iterations
-	average_cost = sum(costs)/length(costs)
-	(;perfect, average_wins, average_cost)
+	draw_walk!(
+		[x for (x, t) in states],
+		[t for (x, t) in states],
+		actions; 
+		cost,
+		colors
+	)
 end
