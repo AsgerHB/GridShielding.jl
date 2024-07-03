@@ -100,7 +100,7 @@ function export_to_shield_dump_o(grid::Grid; working_dir=mktempdir())
 end
 
 """
-    get_libshield(shield::Grid; [destination, working_dir, force=false])
+    get_libshield(shield::Grid; [destination, working_dir, force, function_name])
 
 Serialize the provided grid into a shared object (.so) library with a C function to look up its values.
 Easily access the shield with any application that can make C function calls. 
@@ -119,10 +119,11 @@ Returns the bit-encoded list of allowed actions. (See `int_to_actions`.)
 **Arguments**
 - `shield`: Shield to export.
 - `destination`: Optional filepath. The compiled file will be copied to here.
-- `working_dir`: Temp folder by default. Several files will be generated here.
-- `force`: Whether to overwrite existing file at destination, if it exists.
+- `working_dir`: Several files will be generated here. Temp folder by default.
+- `force`: Whether to overwrite existing file at destination, if it exists. Default: false.
+- `function_name`: Name of the library function that looks up values from the shield. Default: `get_value`.
 """
-function get_libshield(shield::Grid; destination=nothing, working_dir=mktempdir(), force=false)
+function get_libshield(shield::Grid; destination=nothing, working_dir=mktempdir(), force=false, function_name="get_value")
 	# Dump binary data using `ld` command
 	shield_dump_o = export_to_shield_dump_o(shield; working_dir)
 
@@ -137,7 +138,8 @@ function get_libshield(shield::Grid; destination=nothing, working_dir=mktempdir(
 	# Should correspond to size of the state vector.
 	vars = join(["s$i" for i in 1:shield.dimensions], ", ")
 	double_vars = join(["double s$i" for i in 1:shield.dimensions], ", ")
-	file_replace(shield_c, 
+	file_replace(shield_c,
+		"long get_value(" => "long $function_name(",
 		"s1, s2" => vars,
 		"double s1, double s2" => double_vars)
 

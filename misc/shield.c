@@ -63,9 +63,10 @@ long get_value_from_vector(double s[])
     return get_index(indices);
 }
 
-    // SEARCH-AND-REPLACED: The term (double s1, double s2) should not be changed since it will be altered programatically
+    // SEARCH-AND-REPLACED: The term "double s1, double s2" should not be changed since it will be altered programatically in Serialization.jl
+    // SEARCH-AND-REPLACED: The term "long get_value(" should not be changed since it will be altered programatically in Serialization.jl
 long get_value(double s1, double s2)
 {
-    // SEARCH-AND-REPLACED: The term {s1, s2} should not be changed since it will be altered programatically
+    // SEARCH-AND-REPLACED: The term "s1, s2" should not be changed since it will be altered programatically in Serialization.jl
     return get_value_from_vector((double[]){s1, s2});
 }
