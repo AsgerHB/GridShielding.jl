@@ -172,8 +172,12 @@ function export_numpy_array(grid, destination)
 end
 
 """
-	get_meta_info(grid::Grid; variables::A, binary_variables::A, actions::Type, env_id::S) 
-		where {A<:AbstractArray, S<:AbstractString}
+get_meta_info(grid::Grid;
+	variables::A,
+	binary_variables::AA=Int[],
+	actions::Type,
+	env_id::S)
+	where {A<:AbstractArray, AA<:Vector{Int64}, S<:AbstractString}
 
 Returns a dictionary containing structured meta-info on the grid. 
 

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.19.40
 
 using Markdown
 using InteractiveUtils
@@ -148,6 +148,11 @@ deserialized_grid = robust_grid_deserialization(serialized_to)
 # ╔═╡ 0ab7d81e-0b2f-4780-b804-6836cb2e02a3
 @test deserialized_grid == grid
 
+# ╔═╡ 55a1d42d-8ac9-4322-8e8b-d9d7980fd576
+md"""
+## Libshield
+"""
+
 # ╔═╡ fa683a49-d741-405d-9f5e-683d31455ce0
 const libshield = get_libshield(grid; working_dir)
 
@@ -231,6 +236,8 @@ end
 # ╔═╡ 65457eee-e990-4797-9929-cefb437c855d
 md"""
 ## Python Export
+
+For some reason the values of the grid is randomized for this one.
 """
 
 # ╔═╡ f9a4f12e-d3a9-4875-ace2-e214f7bf1c00
@@ -269,7 +276,7 @@ end
 # ╔═╡ d5e30af2-ee54-4132-847e-74e8b1af3eb2
 get_meta_info(grid′,
 	variables=["x", "y"], 
-	binary_variables=String[],
+	binary_variables=Int[],
 	actions=Action,
 	env_id="test grid")
 
@@ -278,8 +285,8 @@ grid_zip = working_dir ⨝ "grid.zip"
 
 # ╔═╡ e1af4cc0-c631-49e4-8df3-73000e96243a
 numpy_zip_file(grid′, grid_zip,
-	variables=["x", "y"], 
-	binary_variables=String[],
+	variables=["x", "y"],
+	binary_variables=Int[],
 	actions=Action,
 	env_id="test grid")
 
@@ -321,6 +328,7 @@ end
 # ╠═9d84159b-6bd7-4e86-89cd-fc0673c2b6ef
 # ╠═91ad5f38-27c6-4de7-8514-3af5b0714fcf
 # ╠═0ab7d81e-0b2f-4780-b804-6836cb2e02a3
+# ╟─55a1d42d-8ac9-4322-8e8b-d9d7980fd576
 # ╠═fa683a49-d741-405d-9f5e-683d31455ce0
 # ╠═5ac0cd91-a25f-44b4-822e-df285009eae2
 # ╠═ae9d67fc-58c9-4d09-83bf-5419e7b010df
