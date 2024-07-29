@@ -134,6 +134,7 @@ function get_libshield(shield::Grid; destination=nothing, working_dir=mktempdir(
 	# shield.c source file that contains lookup functions
 	shield_c = working_dir ⨝ "shield.c"
 	cp(shield_c_path, shield_c, force=true)
+	chmod(shield_c, 0o664) # Ensure write permissions; files in the julia packages folder are write-protected.
 	# Rewrite function `get_value` to take the correct number of parameters.
 	# Should correspond to size of the state vector.
 	vars = join(["s$i" for i in 1:shield.dimensions], ", ")
