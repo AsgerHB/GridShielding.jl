@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -213,7 +215,7 @@ This is required, as otherwise it will only consider the average outcome, and no
 
 Use the following checkbox to add the random factor to the number of supporting points.
 
-enable: $(@bind enable_randomness CheckBox())
+`enable_ranodmness =` $(@bind enable_randomness CheckBox())
 """
 
 # ╔═╡ 4124666b-384b-4451-8c36-fb1649ed85b3
@@ -225,11 +227,14 @@ else
 	nothing # Suppress output
 end
 
+# ╔═╡ 031a4a72-2a65-43f9-8dc6-2ef690ab4d51
+granularity, samples_per_axis, samples_per_axis_random
+
 # ╔═╡ 63866178-5ad2-48b8-88d2-9eaadd73fabf
 if enable_randomness
 	randomness_space = Bounds((-1,), (1,))
 else
-	randomness_space = Bounds((-1,), (-1,))
+	randomness_space = Bounds((1,), (1,))
 end;
 
 # ╔═╡ 53937382-f37e-4935-bd8c-88d8c3c4240b
@@ -286,6 +291,14 @@ md"""
 
 The reachability function from above can be used to compute a safety strategy from the initial `grid`.
 """
+
+# ╔═╡ 7a26056b-b477-4228-9875-5b137858f47f
+if !enable_randomness 
+	md"""
+	!!! danger "Shield Won't be safe"
+		Remember to check the box above, to include randomness, if you want the shield to be safe.
+	"""
+end
 
 # ╔═╡ 492a369c-c21f-4900-b736-e36ee7d72a33
 begin
@@ -472,6 +485,21 @@ if !isnothing(shield) let
 	"Exported `'$filename'`." |> Markdown.parse
 end end
 
+# ╔═╡ cab2a7fb-4f36-4877-b173-30d941eee895
+([
+	grid.size..., 
+	samples_per_axis..., 
+	samples_per_axis_random...
+	] 
+	|> prod
+)
+
+# ╔═╡ 6c77ee28-e18a-452d-9315-ff4936bc6bf6
+
+
+# ╔═╡ 1acda59a-4bee-4029-beb1-8caf8684b17d
+
+
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 # ╠═bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -481,7 +509,7 @@ end end
 # ╟─816cbb33-8a9a-4fb4-a701-339c4b9e4bcb
 # ╠═8564347e-489d-47a6-b0be-ba6b69445707
 # ╠═2f5e4800-eb30-413a-9031-9afd00bc11cc
-# ╟─7ccd4b07-6d57-42ca-aaec-72f9e62ba26e
+# ╠═7ccd4b07-6d57-42ca-aaec-72f9e62ba26e
 # ╟─78b78798-aca2-4fcd-9f18-2a22c70c3829
 # ╟─099c6d2a-d125-4f67-9e30-5d204a634b38
 # ╠═a659ab0a-1955-457f-9f8d-6a7e2699d0aa
@@ -494,6 +522,7 @@ end end
 # ╠═9cbfce51-3a4d-49ad-abc9-101294b96724
 # ╟─f88cd709-a35f-4365-9624-91244a0c113a
 # ╟─ae886eaa-b8e1-471d-9804-2e724352ad4e
+# ╠═031a4a72-2a65-43f9-8dc6-2ef690ab4d51
 # ╟─fbf86b61-57a2-4250-8c1b-fac7110a6429
 # ╠═80efecb0-d269-45a1-974a-de8a4c8a06d3
 # ╟─9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
@@ -508,6 +537,7 @@ end end
 # ╠═2d02e8df-a044-4dd2-bef0-07c80e68293b
 # ╠═b0138efc-3a7d-46a5-9095-528ba9d7663f
 # ╟─7fdda9f4-0dc4-44c6-af98-be1df62ce635
+# ╟─7a26056b-b477-4228-9875-5b137858f47f
 # ╟─492a369c-c21f-4900-b736-e36ee7d72a33
 # ╠═d5e3fd5a-8f0d-4d13-a134-04ddaf8483b7
 # ╟─ca166647-c150-43dc-8271-f3ac47ccb051
@@ -531,3 +561,6 @@ end end
 # ╠═91e0c77f-1bc9-4b19-8e81-cae7af9991ee
 # ╟─f040702a-e967-462f-91d4-627a418371f0
 # ╠═9e92e58b-51d2-4656-8a18-9927aac7f643
+# ╠═cab2a7fb-4f36-4877-b173-30d941eee895
+# ╠═6c77ee28-e18a-452d-9315-ff4936bc6bf6
+# ╠═1acda59a-4bee-4029-beb1-8caf8684b17d

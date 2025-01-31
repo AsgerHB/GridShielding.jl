@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -260,6 +262,7 @@ end
 
 # ╔═╡ f88cd709-a35f-4365-9624-91244a0c113a
 md"""
+The resulting grid contains **$(length(grid))** cells.
 
 The initialized grid is shown in the following figure.
 
@@ -278,6 +281,8 @@ It it uses a set of supporting points, which are a set of regularly spaced point
 Try experimenting with different values.
 
 `samples_per_axis =` $(@bind samples_per_axis NumberField(1:30, default=3))
+
+`samples_per_random_axis =` $(@bind samples_per_random_axis NumberField(1:30, default=3))
 """
 
 # ╔═╡ 9273fb89-dfcf-41f7-acc2-009b8dfb9b1e
@@ -309,7 +314,7 @@ This is required, as otherwise it will only consider the average outcome, and no
 
 Use the following checkbox to add the random factor $\epsilon$ to the number of supporting points.
 
-enable: $(@bind enable_randomness CheckBox(default=true))
+`enable_randomness`: $(@bind enable_randomness CheckBox(default=true))
 """
 
 # ╔═╡ 1685ea67-dcb2-4484-a58b-24c68b9ff2f2
@@ -337,7 +342,7 @@ All of this is wrapped up in the following model `struct` just to make the call 
 """
 
 # ╔═╡ dc971f77-a2bd-47bd-a9df-0786041e77b0
-model = SimulationModel(simulation_function, randomness_space, samples_per_axis, samples_per_axis)
+model = SimulationModel(simulation_function, randomness_space, samples_per_axis, samples_per_random_axis)
 
 # ╔═╡ ae886eaa-b8e1-471d-9804-2e724352ad4e
 begin
@@ -463,17 +468,6 @@ function generate_random_trace()
 	trace.states, trace.actions
 end
 
-# ╔═╡ a79e73f7-8321-43c3-8010-a65b6a89a25c
-random_policy_safety_report = evaluate_safety(generate_random_trace, is_safe, 100)
-
-# ╔═╡ 4606efb3-2699-4366-9a8b-57f8f927da6e
-begin
-	plot(title="Example of Random Trace",
-		size=(400, 400))
-	
-	RW.draw_walk!(random_policy_safety_report.example_trace...)
-end
-
 # ╔═╡ 27441981-e782-473a-8c06-08df624310d4
 """
 ### Shielding the Random Policy
@@ -582,8 +576,6 @@ end
 # ╟─b96e16ad-89b9-4aba-bf2c-dd8eb3e837e0
 # ╠═3445e875-6b17-4095-81e0-12d14bbebb8a
 # ╠═9b874656-7849-42db-81dd-fe63f542cafc
-# ╠═a79e73f7-8321-43c3-8010-a65b6a89a25c
-# ╟─4606efb3-2699-4366-9a8b-57f8f927da6e
 # ╟─27441981-e782-473a-8c06-08df624310d4
 # ╠═85b73888-4c65-4729-b8a5-942fe1cc02d9
 # ╠═e7666cd9-85bb-4988-bc41-4579d7004384

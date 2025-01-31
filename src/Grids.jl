@@ -109,12 +109,7 @@ Base.:(==)(a::Grid, b::Grid) = a.array == b.array
 The ∈ operator has a bunch of type signatures, including just returning "false" in the most general case (which is very slow for some reason). So if I made a type error when using it with a grid or partition, it would just silently return "false" because I'd specified the check to only be for tuples and vectors.
 =#
 Base.in(state, grid::Grid) = begin
-	for dim in 1:grid.dimensions
-		if !(grid.bounds.lower[dim] <= state[dim] < grid.bounds.upper[dim])
-			return false
-		end
-	end
-	return true
+	return state in grid.bounds
 end
 
 Base.in(partition::Partition, grid::Grid) = partition.grid == grid
@@ -132,12 +127,7 @@ end
 
 Base.in(s, partition::Partition) = begin
 	bounds = Bounds(partition)
-	for dim in 1:length(s)
-		if !(bounds.lower[dim] <= s[dim] < bounds.upper[dim])
-			return false
-		end
-	end
-	return true
+	return s in bounds;
 end
 
 Base.isequal(a::Partition, b::Partition) = a.indices == b.indices && a.grid === b.grid
