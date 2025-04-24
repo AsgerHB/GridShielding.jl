@@ -162,15 +162,9 @@ function get_libshield(shield::Grid; destination=nothing, working_dir=mktempdir(
 	return libshield_so
 end
 
-## Exporting to Numpy array + JSON ##
+## Serailizing to JSON ##
 
-function export_numpy_array(grid, destination)
-	np = pyimport("numpy")
-	pyshield = np.array(grid.array)
-	open(destination, write=true, create=true) do 🗋
-		np.save(🗋, pyshield)
-	end
-end
+
 
 """
 get_meta_info(grid::Grid;
@@ -197,21 +191,84 @@ Example:
 		actions=Action,
 		env_id="test grid")
 """
-function get_meta_info(grid::Grid; variables::A, binary_variables::AA=Int[], actions::Type, env_id::S) where {A<:AbstractArray, AA<:Vector{Int64}, S<:AbstractString}
-	Dict(
+function get_meta_info(grid::Grid;
+		variables::A=nothing,
+		binary_variables::AA=Int[],
+		actions::Type,
+		env_id::S="Untitled") where {A<:Union{Nothing, AbstractArray}, AA<:Vector{Int64}, S<:AbstractString}
+
+	if isnothing(variables)
+		variables = [1:grid.dimensions...]
+	end
+
+	actionset = Dict( a => [a′ ∈ int_to_actions(actions, a) for a′ in instances(actions)]
+			for a in 0:actions_to_int(instances(actions)) )
+	
+	actions = instances(actions)
+	n_actions = length(actions)
+
+	bounds = [grid.bounds.lower, grid.bounds.upper]
+	return Dict(
 		"variables" => vcat(variables),
 		"env_id" => env_id,
-	
-		"id_to_actionset" => 
-			Dict(a => [a′ ∈ int_to_actions(actions, a) for a′ in instances(actions)]
-			for a in 0:actions_to_int(instances(actions))),
-	
-		"n_actions" => length(instances(actions)),
-		"actions" => instances(actions),
-		"bounds" => [grid.bounds.lower, grid.bounds.upper],
+		"id_to_actionset" => actionset,
+		"n_actions" => n_actions,
+		"actions" => actions,
+		"bounds" => bounds,
 		"granularity" => grid.granularity,
 		"bvars" => binary_variables
 	)
+end
+
+function to_json(grid::Grid; meta_info)
+	dict = meta_info
+	dict["cells"] = collect(Iterators.flatten(grid.array))
+	JSON.json(dict)
+end
+
+function to_json(grid::Grid, path; meta_info)
+	json = to_json(grid::Grid; meta_info)
+	open(path, write=true) do 🗋
+		write(🗋, json)
+	end
+end
+
+function read_from_json(str; data_type=Int8)
+	if length(str) < 100 && isfile(str) # isfile dies if you feed it too big a string
+		open(str) do 🖹
+			json = String(read(🖹))
+		end
+	else
+		json = str
+	end
+	dict = JSON.parse(json)
+	granularity = Float64[convert(Float64, x) for x in dict["granularity"]]
+	lower = Float64[convert(Float64, x) for x in dict["bounds"][1]]
+	upper = Float64[convert(Float64, x) for x in dict["bounds"][2]]
+	bounds = Bounds(lower, upper)
+	dimensions = get_dim(bounds)
+	size = get_size(granularity, bounds)
+	array = data_type[convert(data_type, x) for x in dict["cells"]]
+	array = reshape(array, Tuple(size))
+	grid = Grid(granularity, dimensions, bounds, size, array)
+	grid
+end
+
+## Serializing to Numpy array + JSON metadata. ##
+
+"""
+	export_numpy_array(grid, destination)
+
+Export grid contents (`grid.array`) as a 1D numpy array. 
+To read contents correctly, additional info is needed.
+See also `get_meta_info`, `numpy_zip_file`.
+"""
+function export_numpy_array(grid, destination)
+	np = pyimport("numpy")
+	pyshield = np.array(grid.array)
+	open(destination, write=true, create=true) do 🗋
+		np.save(🗋, pyshield)
+	end
 end
 
 """

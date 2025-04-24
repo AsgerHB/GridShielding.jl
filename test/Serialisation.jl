@@ -1,17 +1,19 @@
 ### A Pluto.jl notebook ###
-# v0.19.40
+# v0.20.4
 
 using Markdown
 using InteractiveUtils
 
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
+    #! format: off
     quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
+    #! format: on
 end
 
 # ╔═╡ bb902940-a858-11ed-2f11-1d6f5af61e4a
@@ -29,9 +31,6 @@ begin
 	using PyCall
 	TableOfContents()
 end
-
-# ╔═╡ 5db17b6d-62b9-4339-b2b4-64472c9e0318
-Pkg.add("PyCall")
 
 # ╔═╡ 515c5c0b-a734-406c-b89d-6c921001a777
 @revise using GridShielding
@@ -233,6 +232,40 @@ let
 	sort(tests, by=t -> t isa PlutoTest.Fail, rev=true)
 end
 
+# ╔═╡ e3b566eb-95e8-4341-a75f-c7f8a2273497
+md"""
+## JSON
+"""
+
+# ╔═╡ 7690a969-bdad-4c10-a56f-9f627a35c995
+grid_json = working_dir ⨝ "grid.json"
+
+# ╔═╡ 6939a347-2733-4450-8212-8a3c454de3e7
+unique(grid.array)
+
+# ╔═╡ c873b20d-189f-46b6-b323-fd370a6d43d0
+md"""
+## Scratchpad
+
+It would make more sense to make a whole new notebook but I'm having fun so trashy code time :3
+"""
+
+# ╔═╡ 9db5c940-7590-43bb-a686-5911a7ab7526
+hypagrid = read_from_json("/tmp/bouncing_ball.json")
+
+# ╔═╡ 0f462999-cf4c-4d1b-9650-4594132d6469
+let
+	slice::Vector{Any} = [:, :]
+	
+	draw(hypagrid, slice,
+		xlabel="v",
+		ylabel="p",
+		title="Exported from UPPAAL HYPA",
+		colors=[:lightgrey, :wheat, :beige, :moccasin],
+		aspectratio=:equal,
+		size=(500, 300))
+end
+
 # ╔═╡ 65457eee-e990-4797-9929-cefb437c855d
 md"""
 ## Python Export
@@ -242,6 +275,21 @@ For some reason the values of the grid is randomized for this one.
 
 # ╔═╡ f9a4f12e-d3a9-4875-ace2-e214f7bf1c00
 @enum Action foo bar
+
+# ╔═╡ a521bc66-2fc7-403b-a73e-fdf5ef42ec15
+get_meta_info(grid, actions=Action)
+
+# ╔═╡ f1f22c01-8c21-457e-9288-2f7a0c3d2543
+begin
+	to_json(grid, grid_json, meta_info=get_meta_info(grid, actions=Action))
+	json_file_exported = true
+end
+
+# ╔═╡ c22ff289-3585-4ed5-b815-1d291be6c925
+if json_file_exported let
+	grid″ = read_from_json(grid_json, data_type=Int64)
+	@test grid″ == grid
+end end
 
 # ╔═╡ ffaf9dbd-8608-4bd6-814e-cc6fa6aad57d
 begin
@@ -284,32 +332,36 @@ get_meta_info(grid′,
 grid_zip = working_dir ⨝ "grid.zip"
 
 # ╔═╡ e1af4cc0-c631-49e4-8df3-73000e96243a
-numpy_zip_file(grid′, grid_zip,
-	variables=["x", "y"],
-	binary_variables=Int[],
-	actions=Action,
-	env_id="test grid")
+begin
+	numpy_zip_file(grid′, grid_zip,
+		variables=["x", "y"],
+		binary_variables=Int[],
+		actions=Action,
+		env_id="test grid")
+
+	zip_file_exported = true
+end;
 
 # ╔═╡ b10e5910-99bb-4ba3-b366-ebf78ab0b9fe
 np = pyimport("numpy")
 
 # ╔═╡ 24b3e394-3f00-4720-86d0-4acd9cc51b00
-let
+if zip_file_exported let
 	array = nothing
 	for f in ZipFile.Reader(grid_zip).files
 		if f.name == "grid.npy"
 			grid_npy = working_dir ⨝ "grid.npy"
 			write(grid_npy, f)
 			array = np.load(grid_npy)
+			break
 		end
 	end
 	@test grid′.array == array
-end
+end end
 
 # ╔═╡ Cell order:
 # ╟─e4f088b7-b48a-4c6f-aa36-fc9fd4746d9b
 # ╠═bb902940-a858-11ed-2f11-1d6f5af61e4a
-# ╠═5db17b6d-62b9-4339-b2b4-64472c9e0318
 # ╠═1c03e3a8-6de3-49ff-a05d-c22fc41a5de7
 # ╠═515c5c0b-a734-406c-b89d-6c921001a777
 # ╟─670ff2b2-cb12-4840-857f-7d720bc71834
@@ -348,6 +400,15 @@ end
 # ╠═4c994427-caac-4106-8c73-0ced38302059
 # ╠═3e50f49b-ae5a-4c9b-9930-d2abf3539dbc
 # ╠═880437c4-f74d-4e0b-9795-acf52fe40332
+# ╟─e3b566eb-95e8-4341-a75f-c7f8a2273497
+# ╠═a521bc66-2fc7-403b-a73e-fdf5ef42ec15
+# ╠═7690a969-bdad-4c10-a56f-9f627a35c995
+# ╠═f1f22c01-8c21-457e-9288-2f7a0c3d2543
+# ╠═6939a347-2733-4450-8212-8a3c454de3e7
+# ╠═c22ff289-3585-4ed5-b815-1d291be6c925
+# ╠═c873b20d-189f-46b6-b323-fd370a6d43d0
+# ╠═9db5c940-7590-43bb-a686-5911a7ab7526
+# ╟─0f462999-cf4c-4d1b-9650-4594132d6469
 # ╟─65457eee-e990-4797-9929-cefb437c855d
 # ╠═f9a4f12e-d3a9-4875-ace2-e214f7bf1c00
 # ╠═ffaf9dbd-8608-4bd6-814e-cc6fa6aad57d
