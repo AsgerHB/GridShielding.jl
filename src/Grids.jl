@@ -40,7 +40,6 @@ function Grid(granularity, bounds::Bounds; data_type=Int8)
 	if granularity isa Number
 		granularity = Tuple(granularity for _ in 1:dimensions)
 	end
-	# NO-COMMIT: let user choose instead.
     array = zeros(data_type, (size...,))
     Grid(granularity, dimensions, bounds, size, array)
 end
